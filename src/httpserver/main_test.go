@@ -37,6 +37,7 @@ func TestJWTToken(t *testing.T) {
 	}
 	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
+	// Get Token
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
@@ -52,6 +53,8 @@ func TestJWTToken(t *testing.T) {
 		t.Error(err.Error())
 	}
 	token := target.Data.Token
+
+	// Token authentication
 	get_request, err := http.NewRequest("GET", dst + "/home", nil)
 	if err != nil {
         log.Print(err)
@@ -61,8 +64,8 @@ func TestJWTToken(t *testing.T) {
 	q.Add("name", "yuan")
 	get_request.URL.RawQuery = q.Encode()
 	get_request.Header.Set("Authorization", "Bearer " + token)
-	client2 := &http.Client{}
-	get_response, err := client2.Do(get_request)
+
+	get_response, err := client.Do(get_request)
 	if err != nil {
 		t.Fatal("get request failed")
 	}
