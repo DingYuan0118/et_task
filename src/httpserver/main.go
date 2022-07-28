@@ -6,9 +6,15 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"flag"
+	"log"
+	"context"
 
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	pb "entry_task/src/rpcapi"
 )
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -16,7 +22,17 @@ import (
 // and validating.
 var hmacSampleSecret = []byte("mHpdHzQtEWQw7ntdpoNe")
 
+// gRPC 设置
+const (
+	defaultName = "yuan"
+)
 
+var (
+	addr = flag.String("addr", "localhost:50051", "the address to connect to")
+	name = flag.String("name", defaultName, "Name to greet")
+)
+
+// 状态码设置
 const (
 	StatusSuccess = 0 					// |0|成功|
 	StatusServerError = 1000			// |1000|服务器错误|
@@ -38,9 +54,9 @@ type Myclaims struct {
 	jwt.StandardClaims
 }
 
-type UserInfo struct {
-	Username	string
-	Password	string
+type UserLoginInfo struct {
+	Username	string		`json:"username"`
+	Password	string		`json:"password"`
 }
 
 type AuthResponse struct {
@@ -80,34 +96,6 @@ func ParseToken(tokenString string) (*Myclaims, error){
 		return claims, nil
 	}
 	return nil, errors.New("invalid token")
-}
-
-func authHandler(c *gin.Context) {
-	// 用户发送用户名，密码
-	var user UserInfo
-	err := c.ShouldBind(&user)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 1001,
-			"msg" : "无效的参数",
-		})
-		return 
-	}
-	//TODO
-	// 校验用户名和密码是否正确, RPC掉用
-	if true {
-		tokenString, _ := GenToken(user.Username)
-		c.JSON(http.StatusOK, gin.H{
-			"code" : 0,
-			"msg"  : "success",
-			"data" : gin.H{"token": tokenString},
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"code" : 2002,
-		"msg"  : "鉴权失败",
-	}) 
 }
 
 // JWT 认证中间件
@@ -162,9 +150,62 @@ func homehandler(c *gin.Context) {
 	})
 }
 
+
+// use gRPC call the remote Func UserLogin in tcp server
+func validatePasswork(userinfo UserLoginInfo) (int, string) {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connnect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewTcpServerClient(conn)
+
+	// Contact the server and print out its response.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel()
+	r, err := c.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
+	if err != nil {
+		log.Fatalf("Func UserLogin rpc call failed: %v", err)
+	}
+	log.Printf("retcode: %d\n msg:%s", r.GetRetcode(), r.GetMsg())
+	return int(r.GetRetcode()), r.GetMsg()
+}
+
+// User Login API
+func UserLoginHandler(c *gin.Context) {
+	// 用户发送用户名，密码
+	var user UserLoginInfo
+	err := c.ShouldBind(&user)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1001,
+			"msg" : "invalid parameters",
+		})
+		return 
+	}
+	// 校验用户名和密码是否正确, RPC掉用
+	retcode, msg := validatePasswork(user)
+	if retcode == 0 {
+		tokenString, _ := GenToken(user.Username)
+		c.JSON(http.StatusOK, gin.H{
+			"code" : retcode,
+			"msg"  : msg,
+			"data" : gin.H{"token": tokenString},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code" : 2002,
+		"msg"  : "auth failed",
+	}) 
+}
+
 func main() {
+	flag.Parse()
 	r := gin.Default()
 	r.GET("/home", JWTAuthMiddleware(), homehandler)
-	r.POST("/auth", authHandler)
+	r.POST("/login", UserLoginHandler)
 	r.Run()
 }

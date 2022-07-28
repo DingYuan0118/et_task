@@ -24,3 +24,4 @@ go.work
 *.bkp
 *.dtmp
 *.DS_Store
+tmp*
