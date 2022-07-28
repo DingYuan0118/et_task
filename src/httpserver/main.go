@@ -17,6 +17,18 @@ import (
 var hmacSampleSecret = []byte("mHpdHzQtEWQw7ntdpoNe")
 
 
+const (
+	StatusSuccess = 0 					// |0|成功|
+	StatusServerError = 1000			// |1000|服务器错误|
+	StatusInvalidParams = 1001			// |1001|非法参数|
+	StatusNotFound = 1002				// |1002|Not found|
+	StatusLoginFailed = 2001			// |2001|登录失败|
+	StatusTokenExpired = 2002			// |2002|Token 失效，重新登录|
+	StatusQueryFaild = 3001 			// |3001|查询失败|
+	StatusUpdateNicknameFaild = 3002	// |3002|更新昵称失败|
+	StatusUploadPicFailed = 3003		// |3003|上传头像失败|
+)
+
 // MyClaims 自定义声明结构体并内嵌jwt.StandardClaims
 // jwt包自带的jwt.StandardClaims只包含了官方字段
 // 我们这里需要额外记录一个username字段，所以要自定义结构体
@@ -76,7 +88,7 @@ func authHandler(c *gin.Context) {
 	err := c.ShouldBind(&user)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
-			"code": 2001,
+			"code": 1001,
 			"msg" : "无效的参数",
 		})
 		return 
@@ -86,7 +98,7 @@ func authHandler(c *gin.Context) {
 	if true {
 		tokenString, _ := GenToken(user.Username)
 		c.JSON(http.StatusOK, gin.H{
-			"code" : 2000,
+			"code" : 0,
 			"msg"  : "success",
 			"data" : gin.H{"token": tokenString},
 		})
