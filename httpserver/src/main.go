@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	pb "entry_task/src/rpcapi"
+	pb "et-protobuf3/src/rpcapi"
 )
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -162,7 +162,7 @@ func validatePasswork(userinfo UserLoginInfo) (int, string) {
 	c := pb.NewTcpServerClient(conn)
 
 	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	r, err := c.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"google.golang.org/grpc"
-	pb "entry_task/src/rpcapi"
+	pb "et-protobuf3/src/rpcapi"
 )
 
 var (
