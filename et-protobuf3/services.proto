@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "https://git.garena.com/yuan.ding/entry_task/src/rpcapi";
+option go_package = "./src/gomicroapi";
 
 package rpcapi;
 

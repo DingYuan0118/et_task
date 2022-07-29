@@ -10,11 +10,13 @@ import (
 	"log"
 	"context"
 
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc"
+	// "google.golang.org/grpc/credentials/insecure"
+	// "google.golang.org/grpc"
+	"github.com/go-micro/plugins/v4/registry/etcd"
+	"go-micro.dev/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	pb "et-protobuf3/src/rpcapi"
+	pb "et-protobuf3/src/gomicroapi"
 )
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -27,10 +29,10 @@ const (
 	defaultName = "yuan"
 )
 
-var (
-	addr = flag.String("addr", "localhost:50051", "the address to connect to")
-	name = flag.String("name", defaultName, "Name to greet")
-)
+// var (
+// 	addr = flag.String("addr", "localhost:50051", "the address to connect to")
+// 	name = flag.String("name", defaultName, "Name to greet")
+// )
 
 // 状态码设置
 const (
@@ -154,17 +156,27 @@ func homehandler(c *gin.Context) {
 // use gRPC call the remote Func UserLogin in tcp server
 func validatePasswork(userinfo UserLoginInfo) (int, string) {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("did not connnect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewTcpServerClient(conn)
+	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials())) 	// transfer to go-micro
+	etcd_reg := etcd.NewRegistry()
+	// user go-micro
+	service := micro.NewService(
+		micro.Name("entry_task.Client"),
+		micro.Registry(etcd_reg),
+	)
+	service.Init()
+
+	entry_task := pb.NewTcpServerService("entry_task", service.Client())
+
+	// if err != nil {
+	// 	log.Fatalf("did not connnect: %v", err)
+	// }
+	// defer conn.Close()
+	// c := pb.NewTcpServerClient(conn)
 
 	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
-	r, err := c.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
+	r, err := entry_task.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
 	if err != nil {
 		log.Fatalf("Func UserLogin rpc call failed: %v", err)
 	}
