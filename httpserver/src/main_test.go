@@ -8,18 +8,20 @@ import (
 	"log"
 	"net/http"
 	"testing"
+
+	"httpserver/src/auth"
 )
 
 func TestGenToken(t *testing.T) {
-	_, err := GenToken("ding")
+	_, err := auth.GenToken("ding")
 	if err != nil {
 		t.Error(err.Error())
 	}
 }
 
 func TestParseToken(t *testing.T) {
-	token, _ := GenToken("ding")
-	_, err := ParseToken(token)
+	token, _ := auth.GenToken("ding")
+	_, err := auth.ParseToken(token)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -27,8 +29,8 @@ func TestParseToken(t *testing.T) {
 
 const dst = "http://0.0.0.0:8080"
 var jsonData = []byte(`{
-	"username": "ding",
-	"password": "123"
+	"username": "Ding",
+	"password": "dingyuan12"
 }`)
 
 func GetAuthToken(t *testing.T) string {

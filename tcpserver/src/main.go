@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	// "fmt"
@@ -11,39 +10,10 @@ import (
 	"github.com/go-micro/plugins/v4/registry/etcd"
 	pb "et-protobuf3/src/gomicroapi"
 	"go-micro.dev/v4"
+	s "tcpserver/src/serverfunc"
 	// "go-micro.dev/v4/codec/proto"
 	// "google.golang.org/grpc"
 )
-
-// var (
-// 	port = flag.Int("port", 50051,  "The server port")
-// )
-type server struct {
-	// pb.UnimplementedTcpServerServer // 转为使用 go-micro
-}
-
-// tcp 服务端检查密码，demo
-func (s *server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.LoginReturn) error {
-	rep.Msg = "login success"
-	rep.Retcode = 0
-	return nil
-}
-
-func (s *server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.QueryReturn) error {
-	// tmp := pb.QueryReturn{}
-	return nil
-}
-
-func (s *server) UpdateNickname(ctx context.Context, in *pb.UpdateNicknameInfo, rep *pb.UpdateNicknameReturn) error{
-	// tmp := pb.UpdateNicknameReturn{}
-	// return &tmp, nil
-	return nil
-}
-
-func (s *server) UploadPic(ctx context.Context, in *pb.UploadPicInfo, rep *pb.UpdatePicReturn) error{
-	// tmp := pb.UpdatePicReturn{}
-	return nil
-}
 
 func main() {
 	// flag.Parse()
@@ -71,9 +41,9 @@ func main() {
 	service.Init()
 	
 	// 注册服务
-	pb.RegisterTcpServerHandler(service.Server(), new(server))
-	
-	if err := service.Run(); err != nil {
+	pb.RegisterTcpServerHandler(service.Server(), new(s.Server))
+	err := service.Run()
+	if err != nil {
 		fmt.Println(err)
 	}
 }
