@@ -18,11 +18,6 @@ import (
 	conf "et-config/src/statusconfig"
 )
 
-type UserLoginInfo struct {
-	Username	string		`json:"username"`
-	Password	string		`json:"password"`
-}
-
 type AuthResponse struct {
 	Code		int 			`json:"code"`
 	Msg			string 			`json:"msg"`
@@ -49,7 +44,7 @@ func homehandler(c *gin.Context) {
 
 
 // use gRPC call the remote Func UserLogin in tcp server
-func validatePassword(userinfo UserLoginInfo) (int, string) {
+func validatePassword(userinfo pb.UserLoginInfo) (int, string) {
 	// Set up a connection to the server.
 	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials())) 	// transfer to go-micro
 	etcd_reg := etcd.NewRegistry()
@@ -72,7 +67,7 @@ func validatePassword(userinfo UserLoginInfo) (int, string) {
 // User Login API
 func UserLoginHandler(c *gin.Context) {
 	// 用户发送用户名，密码
-	var user UserLoginInfo
+	var user pb.UserLoginInfo
 	err := c.ShouldBind(&user)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -99,10 +94,32 @@ func UserLoginHandler(c *gin.Context) {
 	}) 
 }
 
+// User Query API
+func UserQueryHandler(c *gin.Context) {
+	username := c.MustGet("username").(string)
+	etcd_reg := etcd.NewRegistry()
+	service := micro.NewService(
+		micro.Name("entry_task.Client"),
+		micro.Registry(etcd_reg),
+	)
+	service.Init()
+	entry_task := pb.NewTcpServerService("entry_task", service.Client())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel()
+
+	r, err := entry_task.UserQuery(ctx, &pb.UserQueryInfo{Username: username})
+	if err != nil {
+		log.Println(err)
+		return 
+	}
+	c.JSON(http.StatusOK, r)
+}
+
 func main() {
 	flag.Parse()
 	r := gin.Default()
 	r.GET("/home", auth.JWTAuthMiddleware(), homehandler)
 	r.POST("/login", UserLoginHandler)
+	r.GET("/query", auth.JWTAuthMiddleware(), UserQueryHandler)
 	r.Run()
 }

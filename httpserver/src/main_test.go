@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"testing"
 
+	pb "et-protobuf3/src/gomicroapi"
 	"httpserver/src/auth"
 )
 
@@ -30,8 +31,10 @@ func TestParseToken(t *testing.T) {
 const dst = "http://0.0.0.0:8080"
 var jsonData = []byte(`{
 	"username": "Ding",
-	"password": "dingyuan12"
+	"password": "dingyuan"
 }`)
+
+const Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJleHAiOjE2NTk2MjU0NTAsImlzcyI6ImVudHJ5IHRhc2sifQ.__mDfVxJLbqLPO050Es98dQ5tCg9a-buFnqJgbdEmGg"
 
 func GetAuthToken(t *testing.T) string {
 	request, err := http.NewRequest("POST", dst + "/login", bytes.NewBuffer(jsonData))
@@ -71,7 +74,7 @@ func TestJWTToken(t *testing.T) {
 	q := get_request.URL.Query()
 	q.Add("name", "yuan")
 	get_request.URL.RawQuery = q.Encode()
-	get_request.Header.Set("Authorization", "Bearer " + token)
+	get_request.Header.Set("Authorization", "Bearer " + token + "1")
 
 	client := &http.Client{}
 	get_response, err := client.Do(get_request)
@@ -106,4 +109,30 @@ func TestUserLogin(t *testing.T) {
 	fmt.Println("response Headers:", response.Header)
 	body, _ := ioutil.ReadAll(response.Body)
 	fmt.Println("return body: ", string(body))
+}
+
+func TestUserQuery(t *testing.T) {
+	request, err := http.NewRequest("GET", dst + "/query", nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	q := request.URL.Query()
+	q.Add("name", "Ding")
+	request.URL.RawQuery = q.Encode()
+	request.Header.Set("Authorization", "Bearer " + Token)
+
+	// use Token get query result
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer response.Body.Close()
+	queryResponse := new(pb.QueryReturn)
+	body := body2string(response)
+	err = json.Unmarshal(body, queryResponse)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	log.Printf("Query return info: \n %+v", queryResponse)
 }

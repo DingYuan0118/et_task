@@ -84,6 +84,7 @@ func tableInsert() error {
 		Name: "Ding",
 		Nickname: "Ding",
 		Password: "dingyuan",
+		Profile_pic_url: "User/yuan",
 	}
 	_, err = engine.Insert(&item)
 	return err
