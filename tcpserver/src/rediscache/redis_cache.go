@@ -9,12 +9,6 @@ import (
 
 var Rds redis.Conn
 var Pool *redis.Pool
-// type User struct{
-// 	Name string `json:"name"`
-// 	Data struct{
-// 		Password string `json:"password"`
-// 	}	`json:"data"`
-// }
 
 func RedisPoolInit() *redis.Pool {
 	return &redis.Pool{
@@ -22,7 +16,12 @@ func RedisPoolInit() *redis.Pool {
 		MaxActive: 0, 
 		IdleTimeout: 1 * time.Second,
 		Dial: func() (redis.Conn, error){
-			conn, err := redis.Dial("tcp", "0.0.0.0:6379")
+			conn, err := redis.Dial("tcp", 
+				"0.0.0.0:6379",
+				redis.DialReadTimeout(time.Second),
+				redis.DialWriteTimeout(time.Second),
+				redis.DialConnectTimeout(time.Second),
+			)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -37,8 +36,9 @@ func init() {
 	Pool = RedisPoolInit()
 }
 
-func RedisInit() redis.Conn {
-	return Pool.Get()
+func RedisInit() (redis.Conn, error) {
+	conn := Pool.Get()
+	return conn, nil
 }
 
 

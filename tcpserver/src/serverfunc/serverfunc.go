@@ -9,8 +9,10 @@ import (
 	pb "et-protobuf3/src/gomicroapi"
 	"tcpserver/src/db"
 	"tcpserver/src/rediscache"
+	"tcpserver/src/util"
 
 	"github.com/gomodule/redigo/redis"
+
 )
 type Server struct {
 }
@@ -24,18 +26,18 @@ func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.L
 	// rep.Msg = conf.ErrMsg[conf.StatusSuccess]
 	engine, err := db.DBConnect(db.DBname, db.Password)
 	if err != nil {
-		rep.Retcode, rep.Msg = ThirdPackageError(err)
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
 	defer engine.Close()
 	user := new(db.User)
 	_, err = engine.Where("usr_name = ?", req.Username).Get(user)
 	if err != nil {
-		rep.Retcode, rep.Msg = ThirdPackageError(err)
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
-
-	if user.Password != req.Password {
+	compareResult, _ := util.ComparePasswords(user.Password, req.Password)
+	if !compareResult {
 		retcode = conf.StatusLoginFailed
 		msg = conf.ErrMsg[conf.StatusLoginFailed]
 	}else{
@@ -51,7 +53,12 @@ func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.L
 func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.QueryReturn) error {
 	// tmp := pb.QueryReturn{}
 	username := req.Username
-	conn := rediscache.RedisInit()
+	conn, err := rediscache.RedisInit()
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	defer conn.Close()
 	user := new(db.User)
 	res_json, err := redis.Bytes(conn.Do("GET", username))
 
@@ -61,13 +68,13 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 		// read DB, return engine after sync()
 		engine, err := db.DBConnect(db.DBname, db.Password)
 		if err != nil {
-			rep.Retcode, rep.Msg = ThirdPackageError(err)
+			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 			return err
 		}
 		defer engine.Close()
 		_, err = engine.Where("usr_name = ?", req.Username).Get(user)
 		if err != nil {
-			rep.Retcode, rep.Msg = ThirdPackageError(err)
+			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 			return err
 		}
 
@@ -76,7 +83,8 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 		if err != nil {
 			log.Println(err)
 		}else{
-			_, err = conn.Do("set", user.Name, user_data_json_encode)
+			// 5分钟过期
+			_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
 			if err != nil {
 				log.Println(err)
 			}
@@ -86,7 +94,7 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 		// 缓存命中，直接导入
 		err = json.Unmarshal(res_json, user)
 		if err != nil {
-			rep.Retcode, rep.Msg = ThirdPackageError(err)
+			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 			return err
 		}
 	}
