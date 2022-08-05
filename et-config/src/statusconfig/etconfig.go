@@ -30,13 +30,13 @@ const (
 )
 
 var ErrMsg = map[int]string{
-	StatusSuccess:             "Success",               // |0|成功|
-	StatusServerError:         "Server Error",          // |1000|服务器错误|
-	StatusInvalidParams:       "Invalid Params",        // |1001|非法参数|
-	StatusNotFound:            "Not Found",             // |1002|Not found|
-	StatusLoginFailed:         "Login Failed",          // |2001|登录失败|
-	StatusTokenExpired:        "Token Expired",         // |2002|Token 失效，重新登录|
-	StatusQueryFaild:          "Query Faild",           // |3001|查询失败|
-	StatusUpdateNicknameFaild: "Update Nickname Faild", // |3002|更新昵称失败|
-	StatusUploadPicFailed:     "Upload Picture Failed", // |3003|上传头像失败|
+	StatusSuccess:             "Success",                                                    // |0|成功|
+	StatusServerError:         "Server Error",                                               // |1000|服务器错误|
+	StatusInvalidParams:       "Invalid Params",                                             // |1001|非法参数|
+	StatusNotFound:            "Not Found",                                                  // |1002|Not found|
+	StatusLoginFailed:         "Login Failed",                                               // |2001|登录失败|
+	StatusTokenExpired:        "Token Expired",                                              // |2002|Token 失效，重新登录|
+	StatusQueryFaild:          "Query Faild",                                                // |3001|查询失败|
+	StatusUpdateNicknameFaild: "Update Nickname Faild: Nickname too long or user not exits", // |3002|更新昵称失败|
+	StatusUploadPicFailed:     "Upload Picture Failed",                                      // |3003|上传头像失败|
 }

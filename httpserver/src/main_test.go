@@ -21,7 +21,7 @@ func TestGenToken(t *testing.T) {
 }
 
 func TestParseToken(t *testing.T) {
-	token, _ := auth.GenToken("ding")
+	token, _ := auth.GenToken("Ding")
 	_, err := auth.ParseToken(token)
 	if err != nil {
 		t.Error(err.Error())
@@ -34,7 +34,7 @@ var jsonData = []byte(`{
 	"password": "dingyuan"
 }`)
 
-const Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJleHAiOjE2NTk2MjU0NTAsImlzcyI6ImVudHJ5IHRhc2sifQ.__mDfVxJLbqLPO050Es98dQ5tCg9a-buFnqJgbdEmGg"
+const Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJleHAiOjE2NTk2OTgwNDUsImlzcyI6ImVudHJ5IHRhc2sifQ.fzE9_PUJuigyUR5A6v-iDG1tGSXzi2jjDxlGH_2A8x0"
 
 func GetAuthToken(t *testing.T) string {
 	request, err := http.NewRequest("POST", dst + "/login", bytes.NewBuffer(jsonData))
@@ -135,4 +135,33 @@ func TestUserQuery(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	log.Printf("Query return info: \n %+v", queryResponse)
+}
+
+func TestUpdateNickname(t *testing.T) {
+	jsonData = []byte(`{
+		"username": "Ding",
+		"nickname": "dingyuan12345"
+	}`)
+	request, err := http.NewRequest("POST", dst + "/update-nickname", bytes.NewBuffer(jsonData))
+	if err != nil {
+		t.Error(err.Error())
+	}
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	request.Header.Set("Authorization", "Bearer " + Token)
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	defer response.Body.Close()
+	body := body2string(response)
+	updateNicknameResponse := new(pb.UpdateNicknameReturn)
+	err = json.Unmarshal(body, updateNicknameResponse)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	fmt.Println("response Status:", response.Status)
+	fmt.Println("response Headers:", response.Header)
+	fmt.Println("return body: ", string(body))
 }

@@ -8,23 +8,21 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"xorm.io/xorm"
+	// "tcpserver/src/serverfunc"
 )
-
-var engine *xorm.Engine
 
 type User struct {
 	Id					int64
 	Name 				string		`xorm:"varchar(64) not null unique 'usr_name'"`
 	Nickname 			string 		`xorm:"varchar(64) 'usr_nickname'"`
-	Password			string		`xorm:"varchar(32) 'usr_password'"`
+	Password			string		`xorm:"varchar(64) 'usr_password'"`
 	Profile_pic_url 	string		`xorm:"varchar(1024) "`
-	Ctime				time.Time	`xorm:"created "`
-	Mtime				time.Time	`xorm:"created "`
+	Ctime				time.Time	`xorm:"created"`
+	Mtime				time.Time	`xorm:"updated"`
 }
 
 func dbCreate(name string) error {
-	var db_dst string
-	db_dst = fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/", Password)
+	db_dst := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/", Password)
 
 	db, err := sql.Open("mysql", db_dst)
 	if err != nil {
@@ -67,7 +65,7 @@ func tableCreate() error {
 	return nil
 }
 
-func tableInsert() error {
+func tableInsert(name, password string) error {
 	db_dst := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/%s?charset=utf8", Password, DBname)
 	engine, err := xorm.NewEngine("mysql", db_dst)
 	if err != nil {
@@ -81,9 +79,9 @@ func tableInsert() error {
 		return err
 	}
 	item := User{
-		Name: "Ding",
+		Name: name,
 		Nickname: "Ding",
-		Password: "dingyuan",
+		Password: password,
 		Profile_pic_url: "User/yuan",
 	}
 	_, err = engine.Insert(&item)

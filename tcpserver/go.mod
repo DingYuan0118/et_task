@@ -10,6 +10,7 @@ require (
 	github.com/gomodule/redigo v1.8.9
 	go-micro.dev/v4 v4.8.0
 	go.etcd.io/etcd/client/v3 v3.5.4
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	xorm.io/xorm v1.3.1
 )
 

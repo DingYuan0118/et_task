@@ -21,7 +21,7 @@ type Myclaims struct {
 }
 
 // define token expire time
-const TokenExpireDuartion = time.Hour * 2
+const TokenExpireDuartion = time.Hour * 100000
 
 func GenToken(name string) (string, error) {
 	claim := Myclaims{
