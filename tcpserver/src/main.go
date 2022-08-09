@@ -2,18 +2,15 @@ package main
 
 import (
 	"fmt"
-
-	// "fmt"
-	// "log"
-	// "net"
+	
+	s "tcpserver/src/serverfunc"
+	"tcpserver/src/zaplog"
 
 	"github.com/go-micro/plugins/v4/registry/etcd"
 	pb "et-protobuf3/src/gomicroapi"
 	"go-micro.dev/v4"
-	s "tcpserver/src/serverfunc"
-	// "go-micro.dev/v4/codec/proto"
-	// "google.golang.org/grpc"
 )
+	
 
 func main() {
 	// use etcd 作为注册存储中心
@@ -24,6 +21,8 @@ func main() {
 		micro.Name("entry_task"),
 		micro.Registry(etcd_reg),
 	)
+	// 
+	zaplog.InitLogger()
 	// 初始化，解析命令行参数
 	service.Init()
 	// 注册服务

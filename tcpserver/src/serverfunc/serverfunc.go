@@ -3,16 +3,16 @@ package serverfunc
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 
 	conf "et-config/src/statusconfig"
 	pb "et-protobuf3/src/gomicroapi"
 	"tcpserver/src/db"
 	"tcpserver/src/rediscache"
 	"tcpserver/src/util"
+	"tcpserver/src/zaplog"
 
 	"github.com/gomodule/redigo/redis"
-
 )
 type Server struct {
 }
@@ -20,6 +20,7 @@ type Server struct {
 var retcode int32
 var msg string
 // var useCache bool = true
+var logger = zaplog.Logger
 
 // tcp 服务端检查密码，demo
 func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.LoginReturn) error {
@@ -36,16 +37,18 @@ func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.L
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
+	// user not exist
 	if !res {
+		logger.Info(fmt.Sprintf("user:%s not exist", req.Username))
 		rep.Retcode = conf.StatusLoginFailed
-		rep.Msg = conf.ErrMsg[conf.StatusLoginFailed]
+		rep.Msg = conf.ErrMsg[conf.StatusLoginFailed] + "user not exist"
 		return nil
 	}
 
 	compareResult, _ := util.ComparePasswords(user.Password, req.Password)
 	if !compareResult {
 		retcode = conf.StatusLoginFailed
-		msg = conf.ErrMsg[conf.StatusLoginFailed]
+		msg = conf.ErrMsg[conf.StatusLoginFailed] + "password wrong"
 	}else{
 		retcode = conf.StatusSuccess
 		msg = conf.ErrMsg[conf.StatusSuccess]
@@ -70,7 +73,7 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 
 	// cache miss
 	if err != nil {
-		log.Println("redis cache miss")
+		logger.Info("redis cache miss, username: " + username)
 		// read DB, return engine after sync()
 		engine, err := db.DBConnect()
 		if err != nil {
@@ -78,37 +81,30 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 			return err
 		}
 
-		res, err := engine.Where("usr_name = ?", req.Username).Get(user)
-		if err != nil {
-			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
-			return err
-		}
-		// 理论上应该不存在 Username 不存在的场景，除非用户在查询时，用户名被删除。 为测试补充
+		res, _ := engine.Where("usr_name = ?", req.Username).Get(user)
+		// 理论上应该不存在 Username 不存在的场景，除非用户在查询时，用户名被删除。
 		if !res {
+			logger.Info(fmt.Sprintf("user:%s not exist", req.Username))
 			rep.Retcode = conf.StatusQueryFaild
 			rep.Msg = conf.ErrMsg[conf.StatusQueryFaild]
 			return nil
 		}
-
-		// 数据 encode 准备打入 redis
+		// redis 缓存更新
 		user_data_json_encode, err := json.Marshal(*user)
 		if err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 		}else{
 			// 5分钟过期
 			_, err = conn.Do("set", user.Name, user_data_json_encode, "NX", "EX", "300")
 			if err != nil {
-				log.Println(err)
+				logger.Error(err.Error())
 			}
+			logger.Info("redis 缓存更新, username: " + username)
 		}
 	}else{
-		log.Println("redis cache 命中")
+		logger.Info("redis cache 命中, username: " + username)
 		// 缓存命中，直接导入
-		err = json.Unmarshal(res_json, user)
-		if err != nil {
-			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
-			return err
-		}
+		json.Unmarshal(res_json, user)
 	}
 
 	rep.Data = new(pb.QueryReturn_Data)
@@ -127,7 +123,7 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	newNickname := req.Nickname
 	if len(newNickname) > 64 {
 		rep.Retcode = conf.StatusUpdateNicknameFaild
-		rep.Msg = conf.ErrMsg[conf.StatusUpdateNicknameFaild]
+		rep.Msg = conf.ErrMsg[conf.StatusUpdateNicknameFaild] + "Nickname too long"
 		return nil
 	}
 	// 更新数据库
@@ -170,6 +166,7 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
+	logger.Info("mysql 数据库更新, username: " + username)
 
 	// 更新缓存
 	conn, err := rediscache.RedisInit()
@@ -186,8 +183,9 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	// 5分钟过期
 	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
+	logger.Info("redis 缓存更新, username: " + username)
 
 	// 返回更新信息
 	rep.Retcode = conf.StatusSuccess
@@ -240,6 +238,7 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
+	logger.Info("mysql 数据库更新, username: " + username)
 	// 缓存更新
 	conn, err := rediscache.RedisInit()
 	if err != nil {
@@ -255,8 +254,9 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	// 5分钟过期
 	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
+	logger.Info("redis 缓存更新, username: " + username)
 	
 	rep.Data = new(pb.UploadPicReturn_Data)
 	rep.Data.ProfilePicUrl = old_url

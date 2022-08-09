@@ -3,7 +3,6 @@ package handlerfunc
 import (
 	// "fmt"
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -14,15 +13,17 @@ import (
 	pb "et-protobuf3/src/gomicroapi"
 	"httpserver/src/auth"
 	"httpserver/src/util"
+	"httpserver/src/zaplog"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-micro/plugins/v4/registry/etcd"
 	"go-micro.dev/v4"
+	"go.uber.org/zap"
 )
 
 // define token expire time
 const TokenExpireDuartion = time.Hour * 2
-
+var logger = zaplog.Logger
 // user etcd register center
 var service micro.Service
 var entry_task pb.TcpServerService
@@ -45,8 +46,10 @@ func validatePassword(userinfo *pb.UserLoginInfo) (int, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 	// go micro 调用 UserLogin
-	r, _ := entry_task.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
-	log.Printf("retcode: %d\n msg:%s", r.GetRetcode(), r.GetMsg())
+	r, err := entry_task.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
+	if err != nil {
+		logger.Error(err.Error())
+	}
 	return int(r.GetRetcode()), r.GetMsg()
 }
 
@@ -56,6 +59,7 @@ func UserLoginHandler(c *gin.Context) {
 	var user pb.UserLoginInfo
 	err := c.ShouldBind(&user)
 	if err != nil {
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusInvalidParams,
 			"msg" : conf.ErrMsg[conf.StatusInvalidParams],
@@ -84,13 +88,12 @@ func UserLoginHandler(c *gin.Context) {
 func UserQueryHandler(c *gin.Context) {
 	// 由 token 提取 username
 	username := c.MustGet("username").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour) // 请求超时时长一般设置 5s
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour) // TODO 请求超时时长一般设置 5s
 	defer cancel()
 
-	// 逻辑需要修改
 	r, err := entry_task.UserQuery(ctx, &pb.UserQueryInfo{Username: username})
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"retcode": r.GetRetcode(),
@@ -112,6 +115,7 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 	// 使用 Token 中的 username 防止误修改其他用户信息
 	user.Username = username
 	if err != nil {
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusInvalidParams,
 			"msg" : conf.ErrMsg[conf.StatusInvalidParams],
@@ -123,7 +127,7 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 
 	r, err := entry_task.UpdateNickname(ctx, &user)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"retcode": r.GetRetcode(),
@@ -143,15 +147,16 @@ func UserUploadPicHandler(c *gin.Context) {
 	user.Username = username
 	file, err := c.FormFile("file")
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
 	file_os, _ := file.Open()
 	filetype, err := util.GetFileContentType(file_os)
-	log.Println(filetype)
+	logger.Info("upload file type",
+		zap.String("file type", filetype))
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, gin.H{
-			"code": conf.StatusThirdPackageErr,
+			"code": conf.StatusServerError,
 			"msg" : err.Error(),
 		})
 		return 
@@ -160,6 +165,7 @@ func UserUploadPicHandler(c *gin.Context) {
 	// 判断是否符合格式
 	var types = []string {"image/png", "image/jpeg", "image/bmp"}
 	if !util.Contains(types, filetype) {
+		logger.Info("file format error, support [png, jpeg, bmp], got " + filetype)
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusUploadPicFailed,
 			"msg": "file format error, support [png, jpeg, bmp], got " + filetype ,
@@ -168,6 +174,7 @@ func UserUploadPicHandler(c *gin.Context) {
 	}
 	// filesize should < 3MB
 	if file.Size > 3 << 20 {
+		logger.Info("file too large, should less than 3MB" + filetype)
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusUploadPicFailed,
 			"msg": "file too large, should less than 3MB",
@@ -188,7 +195,7 @@ func UserUploadPicHandler(c *gin.Context) {
 	// 返回旧 url 用于删除
 	r, err := entry_task.UploadPic(ctx, &user)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusUploadPicFailed,
 			"msg": err.Error(),
@@ -200,14 +207,32 @@ func UserUploadPicHandler(c *gin.Context) {
 	// 删除后更新
 	err = os.Remove(old_url)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
-	c.SaveUploadedFile(file, url)
+
+	// 可能出现权限问题
+	err = c.SaveUploadedFile(file, url)
+	if err != nil {
+		logger.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code": conf.StatusServerError,
+			"msg": err.Error(),
+		})
+		return 
+	}
+	logger.Info("upload pic success")
 	c.JSON(http.StatusOK, gin.H{
 		"code": r.GetRetcode(),
 		"msg": "upload pic success",
 		"data": gin.H{
 			"profile_pic_url": r.GetData().GetProfilePicUrl(),
 		},
+	})
+}
+
+func NoRouteHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"code": conf.StatusNotFound,
+		"msg": conf.ErrMsg[conf.StatusNotFound],
 	})
 }

@@ -27,20 +27,19 @@ const (
 	StatusQueryFaild          = 3001 // |3001|查询失败|
 	StatusUpdateNicknameFaild = 3002 // |3002|更新昵称失败|
 	StatusUploadPicFailed     = 3003 // |3003|上传头像失败|
-	StatusThirdPackageErr     = 4000 // |4000|第三方库返回错误|
 )
 
 var ErrMsg = map[int]string{
-	StatusSuccess:             "Success",                                                    // |0|成功|
-	StatusServerError:         "Server Error",                                               // |1000|服务器错误|
-	StatusInvalidParams:       "Invalid Params",                                             // |1001|非法参数|
-	StatusNotFound:            "Not Found",                                                  // |1002|Not found|
-	StatusLoginFailed:         "Login Failed",                                               // |2001|登录失败|
-	StatusTokenInvalid:        "Token Invalid",                                              // |2002|Token 失效，重新登录|
-	StatusNoToken:             "Token no exist",                                             // |2003|请求头中无token，重新登录|
-	StatusQueryFaild:          "Query Faild",                                                // |3001|查询失败|
-	StatusUpdateNicknameFaild: "Update Nickname Faild: Nickname too long or user not exits", // |3002|更新昵称失败|
-	StatusUploadPicFailed:     "Upload Picture Failed",                                      // |3003|上传头像失败|
+	StatusSuccess:             "Success. ",                         // |0|成功|
+	StatusServerError:         "Server Error. ",                    // |1000|服务器错误|
+	StatusInvalidParams:       "Invalid Params. ",                  // |1001|非法参数|
+	StatusNotFound:            "Not Found. ",                       // |1002|Not found|
+	StatusLoginFailed:         "Login Failed. ",                    // |2001|登录失败|
+	StatusTokenInvalid:        "Token Invalid. Please Login again", // |2002|Token 失效，重新登录|
+	StatusNoToken:             "Token not exist. ",                 // |2003|请求头中无token，重新登录|
+	StatusQueryFaild:          "Query Faild. ",                     // |3001|查询失败|
+	StatusUpdateNicknameFaild: "Update Nickname Faild. ",           // |3002|更新昵称失败|
+	StatusUploadPicFailed:     "Upload Picture Failed. ",           // |3003|上传头像失败|
 }
 
 // 图像存储路径

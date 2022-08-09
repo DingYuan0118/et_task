@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// 使用文件前 512 字节判断文件类型
 func GetFileContentType(out multipart.File) (string, error) {
 
     // 只需要前 512 个字节就可以了

@@ -1,16 +1,16 @@
 package util
 
 import (
-	"log"
 	conf "et-config/src/statusconfig"
 
 	"golang.org/x/crypto/bcrypt"
+	"tcpserver/src/zaplog"
 )
 
 // 第三方包错误统一返回
 func ThirdPackageError(err error) (retcode int32, msg string) {
-	log.Println(err)
-	retcode = int32(conf.StatusThirdPackageErr)
+	zaplog.Logger.Error(err.Error())
+	retcode = int32(conf.StatusServerError)
 	msg = err.Error()
 	return
 }
