@@ -59,8 +59,8 @@ func TestUpdateNickname(t *testing.T) {
 		rep *pb.UpdateNicknameReturn
 		want *pb.UpdateNicknameReturn
 	}{
-		// {&pb.UpdateNicknameInfo{Username: "Ding", Nickname: "dingyuan123"}, &pb.UpdateNicknameReturn{}, &pb.UpdateNicknameReturn{Retcode: conf.StatusSuccess}},
-		// {&pb.UpdateNicknameInfo{Username: "Ding", Nickname: "dingyuan231231231231231232132131231231231231231231231231231231231231231"}, &pb.UpdateNicknameReturn{}, &pb.UpdateNicknameReturn{Retcode: conf.StatusUpdateNicknameFaild}}, // nickname to long
+		{&pb.UpdateNicknameInfo{Username: "Ding", Nickname: "dingyuan1243"}, &pb.UpdateNicknameReturn{}, &pb.UpdateNicknameReturn{Retcode: conf.StatusSuccess}},
+		{&pb.UpdateNicknameInfo{Username: "Ding", Nickname: "dingyuan231231231231231232132131231231231231231231231231231231231231231"}, &pb.UpdateNicknameReturn{}, &pb.UpdateNicknameReturn{Retcode: conf.StatusUpdateNicknameFaild}}, // nickname to long
 		{&pb.UpdateNicknameInfo{Username: "Ding1", Nickname: "dingyuan"}, &pb.UpdateNicknameReturn{}, &pb.UpdateNicknameReturn{Retcode: conf.StatusUpdateNicknameFaild}}, // user not exits
 	}
 
@@ -68,6 +68,29 @@ func TestUpdateNickname(t *testing.T) {
 	s := Server{}
 	for _, test := range tests {
 		err := s.UpdateNickname(ctx, test.req, test.rep)
+		if err != nil {
+			t.Error(err)
+		}
+		if test.rep.Retcode != test.want.Retcode {
+			t.Errorf("reture code err: got %d, wand %d", test.rep.Retcode, test.want.Retcode)
+		}
+	}
+}
+
+func TestUploadPic(t *testing.T) {
+	tests := []struct{
+		req *pb.UploadPicInfo
+		rep *pb.UploadPicReturn
+		want *pb.UploadPicReturn
+	}{
+		{&pb.UploadPicInfo{Username: "Ding", Data: &pb.UploadPicInfo_Data{ProfilePicUrl: "/user/yuan.ding/Ding"}}, &pb.UploadPicReturn{}, &pb.UploadPicReturn{Retcode: conf.StatusSuccess}}, // 
+		{&pb.UploadPicInfo{Username: "Ding1", Data: &pb.UploadPicInfo_Data{ProfilePicUrl: "/user/yuan.ding/Ding"}}, &pb.UploadPicReturn{}, &pb.UploadPicReturn{Retcode: conf.StatusUploadPicFailed}}, // user not exits
+	}
+
+	ctx := context.Background()
+	s := Server{}
+	for _, test := range tests {
+		err := s.UploadPic(ctx, test.req, test.rep)
 		if err != nil {
 			t.Error(err)
 		}

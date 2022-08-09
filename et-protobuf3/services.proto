@@ -10,7 +10,7 @@ service TcpServer {
   rpc UserLogin (UserLoginInfo) returns (LoginReturn) {}
   rpc UserQuery (UserQueryInfo) returns (QueryReturn) {}
   rpc UpdateNickname (UpdateNicknameInfo) returns (UpdateNicknameReturn) {}
-  rpc UploadPic (UploadPicInfo) returns (UpdatePicReturn) {}
+  rpc UploadPic (UploadPicInfo) returns (UploadPicReturn) {}
 }
 
 // message use for Func UserLogin
@@ -59,12 +59,14 @@ message UpdateNicknameReturn {
 // message use for Func UpdateNickname
 message UploadPicInfo {
   string username = 1;
-  int32 filetype = 2;
-  bytes file = 3;
+  message Data {
+    string profile_pic_url = 1;
+  };
+  Data data = 2;
 }
 
-message UpdatePicReturn {
-  int32 retcode =1;
+message UploadPicReturn {
+  int32 retcode = 1;
   string msg = 2;
   message Data {
     string profile_pic_url = 1;

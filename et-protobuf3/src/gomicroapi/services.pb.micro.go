@@ -40,7 +40,7 @@ type TcpServerService interface {
 	UserLogin(ctx context.Context, in *UserLoginInfo, opts ...client.CallOption) (*LoginReturn, error)
 	UserQuery(ctx context.Context, in *UserQueryInfo, opts ...client.CallOption) (*QueryReturn, error)
 	UpdateNickname(ctx context.Context, in *UpdateNicknameInfo, opts ...client.CallOption) (*UpdateNicknameReturn, error)
-	UploadPic(ctx context.Context, in *UploadPicInfo, opts ...client.CallOption) (*UpdatePicReturn, error)
+	UploadPic(ctx context.Context, in *UploadPicInfo, opts ...client.CallOption) (*UploadPicReturn, error)
 }
 
 type tcpServerService struct {
@@ -85,9 +85,9 @@ func (c *tcpServerService) UpdateNickname(ctx context.Context, in *UpdateNicknam
 	return out, nil
 }
 
-func (c *tcpServerService) UploadPic(ctx context.Context, in *UploadPicInfo, opts ...client.CallOption) (*UpdatePicReturn, error) {
+func (c *tcpServerService) UploadPic(ctx context.Context, in *UploadPicInfo, opts ...client.CallOption) (*UploadPicReturn, error) {
 	req := c.c.NewRequest(c.name, "TcpServer.UploadPic", in)
-	out := new(UpdatePicReturn)
+	out := new(UploadPicReturn)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ type TcpServerHandler interface {
 	UserLogin(context.Context, *UserLoginInfo, *LoginReturn) error
 	UserQuery(context.Context, *UserQueryInfo, *QueryReturn) error
 	UpdateNickname(context.Context, *UpdateNicknameInfo, *UpdateNicknameReturn) error
-	UploadPic(context.Context, *UploadPicInfo, *UpdatePicReturn) error
+	UploadPic(context.Context, *UploadPicInfo, *UploadPicReturn) error
 }
 
 func RegisterTcpServerHandler(s server.Server, hdlr TcpServerHandler, opts ...server.HandlerOption) error {
@@ -110,7 +110,7 @@ func RegisterTcpServerHandler(s server.Server, hdlr TcpServerHandler, opts ...se
 		UserLogin(ctx context.Context, in *UserLoginInfo, out *LoginReturn) error
 		UserQuery(ctx context.Context, in *UserQueryInfo, out *QueryReturn) error
 		UpdateNickname(ctx context.Context, in *UpdateNicknameInfo, out *UpdateNicknameReturn) error
-		UploadPic(ctx context.Context, in *UploadPicInfo, out *UpdatePicReturn) error
+		UploadPic(ctx context.Context, in *UploadPicInfo, out *UploadPicReturn) error
 	}
 	type TcpServer struct {
 		tcpServer
@@ -135,6 +135,6 @@ func (h *tcpServerHandler) UpdateNickname(ctx context.Context, in *UpdateNicknam
 	return h.TcpServerHandler.UpdateNickname(ctx, in, out)
 }
 
-func (h *tcpServerHandler) UploadPic(ctx context.Context, in *UploadPicInfo, out *UpdatePicReturn) error {
+func (h *tcpServerHandler) UploadPic(ctx context.Context, in *UploadPicInfo, out *UploadPicReturn) error {
 	return h.TcpServerHandler.UploadPic(ctx, in, out)
 }

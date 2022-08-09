@@ -25,12 +25,11 @@ var msg string
 func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.LoginReturn) error {
 	// rep.Retcode = conf.StatusSuccess
 	// rep.Msg = conf.ErrMsg[conf.StatusSuccess]
-	engine, err := db.DBConnect(db.DBname, db.Password)
+	engine, err := db.DBConnect()
 	if err != nil {
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
-	defer engine.Close()
 	user := new(db.User)
 	res, err := engine.Where("usr_name = ?", req.Username).Get(user)
 	if err != nil {
@@ -73,12 +72,11 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 	if err != nil {
 		log.Println("redis cache miss")
 		// read DB, return engine after sync()
-		engine, err := db.DBConnect(db.DBname, db.Password)
+		engine, err := db.DBConnect()
 		if err != nil {
 			rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 			return err
 		}
-		defer engine.Close()
 
 		res, err := engine.Where("usr_name = ?", req.Username).Get(user)
 		if err != nil {
@@ -134,12 +132,11 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	}
 	// 更新数据库
 	user := new(db.User)
-	engine, err := db.DBConnect(db.DBname, db.Password)
+	engine, err := db.DBConnect()
 	if err != nil {
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
-	defer engine.Close()
 	res, err := engine.Where("usr_name = ?", username).Get(user)
 	if err != nil {
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
@@ -200,7 +197,70 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	return nil
 }
 
-func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.UpdatePicReturn) error{
+func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.UploadPicReturn) error{
 	// tmp := pb.UpdatePicReturn{}
+	username := req.GetUsername()
+	url := req.GetData().GetProfilePicUrl()
+	// 更新数据库
+	user := new(db.User)
+	engine, err := db.DBConnect()
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	
+	res, err := engine.Where("usr_name = ?", username).Get(user)
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	// 用户不存在
+	if !res {
+		rep.Retcode = conf.StatusUploadPicFailed
+		rep.Msg = conf.ErrMsg[conf.StatusUploadPicFailed]
+		return nil
+	}
+	old_url := user.Profile_pic_url
+	user.Profile_pic_url = url
+	session := engine.NewSession()
+	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	_, err = engine.ID(user.Id).Cols("profile_pic_url").Update(user)
+	if err != nil {
+		session.Rollback()
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	err = session.Commit()
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	// 缓存更新
+	conn, err := rediscache.RedisInit()
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	defer conn.Close()
+	user_data_json_encode, err := json.Marshal(*user)
+	if err != nil {
+		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
+		return err
+	}
+	// 5分钟过期
+	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
+	if err != nil {
+		log.Println(err)
+	}
+	
+	rep.Data = new(pb.UploadPicReturn_Data)
+	rep.Data.ProfilePicUrl = old_url
+	rep.Retcode = int32(conf.StatusSuccess)
+	rep.Msg = conf.ErrMsg[conf.StatusSuccess]
 	return nil
 }

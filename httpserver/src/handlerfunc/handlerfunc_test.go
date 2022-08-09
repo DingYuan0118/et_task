@@ -1,4 +1,4 @@
-package main
+package handlerfunc
 
 import (
 	"bytes"
@@ -13,6 +13,15 @@ import (
 	"httpserver/src/auth"
 )
 
+type AuthResponse struct {
+	Code		int 			`json:"code"`
+	Msg			string 			`json:"msg"`
+	Data		DataResponse 	`json:"data"`
+}
+
+type DataResponse struct {
+	Token	string  `json:"token"`
+}
 func TestGenToken(t *testing.T) {
 	_, err := auth.GenToken("ding")
 	if err != nil {
@@ -72,7 +81,7 @@ func TestJWTToken(t *testing.T) {
         t.Fatal(err.Error())
     }
 	q := get_request.URL.Query()
-	q.Add("name", "yuan")
+	q.Add("username", "yuan")
 	get_request.URL.RawQuery = q.Encode()
 	get_request.Header.Set("Authorization", "Bearer " + token + "1")
 
@@ -117,7 +126,7 @@ func TestUserQuery(t *testing.T) {
 		t.Error(err.Error())
 	}
 	q := request.URL.Query()
-	q.Add("name", "Ding")
+	q.Add("username", "Ding")
 	request.URL.RawQuery = q.Encode()
 	request.Header.Set("Authorization", "Bearer " + Token)
 

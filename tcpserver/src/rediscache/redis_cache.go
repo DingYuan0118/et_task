@@ -2,7 +2,6 @@ package rediscache
 
 import (
 	"log"
-	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -12,15 +11,15 @@ var Pool *redis.Pool
 
 func RedisPoolInit() *redis.Pool {
 	return &redis.Pool{
-		MaxIdle: 5,
-		MaxActive: 0, 
-		IdleTimeout: 1 * time.Second,
+		MaxIdle: Maxidle,
+		MaxActive: Maxactive, 
+		IdleTimeout: Idletimeout,
 		Dial: func() (redis.Conn, error){
 			conn, err := redis.Dial("tcp", 
 				"0.0.0.0:6379",
-				redis.DialReadTimeout(time.Second),
-				redis.DialWriteTimeout(time.Second),
-				redis.DialConnectTimeout(time.Second),
+				redis.DialReadTimeout(Dialreadtimeout),
+				redis.DialWriteTimeout(Dialwritetimeout),
+				redis.DialConnectTimeout(Dialconnecttimeout),
 			)
 			if err != nil {
 				log.Println(err)
@@ -40,37 +39,3 @@ func RedisInit() (redis.Conn, error) {
 	conn := Pool.Get()
 	return conn, nil
 }
-
-
-// func main() {
-// 	RedisInit()
-// 	defer RedisClose()
-
-// 	user := User{
-// 		Name: "ding",
-// 		Data: struct{Password string "json:\"password\""}{Password: "123"},
-// 	}
-
-// 	user_encode, err := json.Marshal(user)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	_, err = rds.Do("set", "user1", user_encode)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	user_get, err := redis.Bytes(rds.Do("get", "user1"))
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	user_return := new(User)
-// 	err = json.Unmarshal(user_get, user_return)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	fmt.Printf("return value: \n %+v \n", *user_return)
-// }

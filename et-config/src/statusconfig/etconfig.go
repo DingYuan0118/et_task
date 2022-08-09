@@ -22,11 +22,12 @@ const (
 	StatusInvalidParams       = 1001 // |1001|非法参数|
 	StatusNotFound            = 1002 // |1002|Not found|
 	StatusLoginFailed         = 2001 // |2001|登录失败|
-	StatusTokenExpired        = 2002 // |2002|Token 失效，重新登录|
+	StatusTokenInvalid        = 2002 // |2002|Token 失效，重新登录|
+	StatusNoToken             = 2003 // |2003|请求头中无token，重新登录|
 	StatusQueryFaild          = 3001 // |3001|查询失败|
 	StatusUpdateNicknameFaild = 3002 // |3002|更新昵称失败|
 	StatusUploadPicFailed     = 3003 // |3003|上传头像失败|
-	StatusThirdPackageErr     = 4000 // |4000|第三方库返回错误
+	StatusThirdPackageErr     = 4000 // |4000|第三方库返回错误|
 )
 
 var ErrMsg = map[int]string{
@@ -35,8 +36,12 @@ var ErrMsg = map[int]string{
 	StatusInvalidParams:       "Invalid Params",                                             // |1001|非法参数|
 	StatusNotFound:            "Not Found",                                                  // |1002|Not found|
 	StatusLoginFailed:         "Login Failed",                                               // |2001|登录失败|
-	StatusTokenExpired:        "Token Expired",                                              // |2002|Token 失效，重新登录|
+	StatusTokenInvalid:        "Token Invalid",                                              // |2002|Token 失效，重新登录|
+	StatusNoToken:             "Token no exist",                                             // |2003|请求头中无token，重新登录|
 	StatusQueryFaild:          "Query Faild",                                                // |3001|查询失败|
 	StatusUpdateNicknameFaild: "Update Nickname Faild: Nickname too long or user not exits", // |3002|更新昵称失败|
 	StatusUploadPicFailed:     "Upload Picture Failed",                                      // |3003|上传头像失败|
 }
+
+// 图像存储路径
+const ImageFolder string = "/Users/yuan.ding/Desktop/code/entry_task/userimages/"
