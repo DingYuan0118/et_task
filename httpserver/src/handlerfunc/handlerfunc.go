@@ -23,7 +23,7 @@ import (
 
 // define token expire time
 const TokenExpireDuartion = time.Hour * 2
-var logger = zaplog.Logger
+var logger *zap.Logger
 // user etcd register center
 var service micro.Service
 var entry_task pb.TcpServerService
@@ -39,6 +39,7 @@ func MicrosServiceInit() {
 	)
 	service.Init()
 	entry_task = pb.NewTcpServerService("entry_task", service.Client())
+	logger = zaplog.Logger
 }
 
 // use gRPC call the remote Func UserLogin in tcp server
@@ -96,7 +97,7 @@ func UserQueryHandler(c *gin.Context) {
 		logger.Error(err.Error())
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"retcode": r.GetRetcode(),
+		"code": r.GetRetcode(),
 		"msg": r.GetMsg(),
 		"data": gin.H{
 			"username" : r.GetData().GetUsername(),
@@ -130,7 +131,7 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 		logger.Error(err.Error())
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"retcode": r.GetRetcode(),
+		"code": r.GetRetcode(),
 		"msg": r.GetMsg(),
 		"data": gin.H{
 			"nickname" : r.GetData().GetNickname(),
@@ -141,9 +142,9 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 // Upload pic api
 func UserUploadPicHandler(c *gin.Context) {
 	var user pb.UploadPicInfo
-	username := c.PostForm("username")
+	// username := c.PostForm("username")
 	// 从 Token 中获取
-	// username := c.MustGet("username")
+	username := c.MustGet("username").(string)
 	user.Username = username
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -189,7 +190,7 @@ func UserUploadPicHandler(c *gin.Context) {
 	user.Data = new(pb.UploadPicInfo_Data)
 	user.Data.ProfilePicUrl = url
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
 	defer cancel()
 
 	// 返回旧 url 用于删除
@@ -203,7 +204,7 @@ func UserUploadPicHandler(c *gin.Context) {
 		return
 	}
 
-	old_url := r.Data.ProfilePicUrl
+	old_url := r.Data.OldProfilePicUrl
 	// 删除后更新
 	err = os.Remove(old_url)
 	if err != nil {

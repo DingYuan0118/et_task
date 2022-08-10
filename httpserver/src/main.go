@@ -15,9 +15,10 @@ import (
 )
 
 func main() {
+	// 日志初始化在前
+	logger := zaplog.InitLogger()
 	hand.MicrosServiceInit()
 	flag.Parse()
-	logger := zaplog.InitLogger()
 	r := gin.New()
 	// r := gin.Default()
 	// 使用 zap 记录 gin 以及其他信息，默认级别为 INFO，分别输出至 ./log 与 os.stdout

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	conf "et-config/src/statusconfig"
 	pb "et-protobuf3/src/gomicroapi"
@@ -20,7 +21,6 @@ type Server struct {
 var retcode int32
 var msg string
 // var useCache bool = true
-var logger = zaplog.Logger
 
 // tcp 服务端检查密码，demo
 func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.LoginReturn) error {
@@ -39,7 +39,7 @@ func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.L
 	}
 	// user not exist
 	if !res {
-		logger.Info(fmt.Sprintf("user:%s not exist", req.Username))
+		zaplog.Logger.Info(fmt.Sprintf("user:%s not exist", req.Username))
 		rep.Retcode = conf.StatusLoginFailed
 		rep.Msg = conf.ErrMsg[conf.StatusLoginFailed] + "user not exist"
 		return nil
@@ -73,7 +73,7 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 
 	// cache miss
 	if err != nil {
-		logger.Info("redis cache miss, username: " + username)
+		zaplog.Logger.Info("redis cache miss, username: " + username)
 		// read DB, return engine after sync()
 		engine, err := db.DBConnect()
 		if err != nil {
@@ -84,25 +84,26 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 		res, _ := engine.Where("usr_name = ?", req.Username).Get(user)
 		// 理论上应该不存在 Username 不存在的场景，除非用户在查询时，用户名被删除。
 		if !res {
-			logger.Info(fmt.Sprintf("user:%s not exist", req.Username))
+			err := fmt.Errorf("user:%s not exist", req.Username)
+			zaplog.Logger.Info(err.Error())
 			rep.Retcode = conf.StatusQueryFaild
-			rep.Msg = conf.ErrMsg[conf.StatusQueryFaild]
-			return nil
+			rep.Msg = conf.ErrMsg[conf.StatusQueryFaild] + err.Error()
+			return err
 		}
 		// redis 缓存更新
 		user_data_json_encode, err := json.Marshal(*user)
 		if err != nil {
-			logger.Error(err.Error())
+			zaplog.Logger.Error(err.Error())
 		}else{
 			// 5分钟过期
 			_, err = conn.Do("set", user.Name, user_data_json_encode, "NX", "EX", "300")
 			if err != nil {
-				logger.Error(err.Error())
+				zaplog.Logger.Error(err.Error())
 			}
-			logger.Info("redis 缓存更新, username: " + username)
+			zaplog.Logger.Info("redis 缓存更新, username: " + username)
 		}
 	}else{
-		logger.Info("redis cache 命中, username: " + username)
+		zaplog.Logger.Info("redis cache 命中, username: " + username)
 		// 缓存命中，直接导入
 		json.Unmarshal(res_json, user)
 	}
@@ -140,9 +141,11 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	}
 	// 理论上应该不存在 Username 不存在的场景，除非用户在修改时，用户名被删除。
 	if !res {
+		err := fmt.Errorf("user:%s not exist", req.Username)
+		zaplog.Logger.Info(err.Error())
 		rep.Retcode = conf.StatusUpdateNicknameFaild
-		rep.Msg = conf.ErrMsg[conf.StatusUpdateNicknameFaild]
-		return nil
+		rep.Msg = conf.ErrMsg[conf.StatusUpdateNicknameFaild] + err.Error()
+		return err
 	}
 	user.Nickname = newNickname
 	// 使用事务更新 用户更新暂不考虑并发场景，不使用协程更新数据库与缓存
@@ -154,7 +157,7 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 		return err
 	}
 	
-	_, err = session.Where("usr_name = ?", username).Update(user)
+	_, err = session.Where("usr_name = ?", username).Cols("usr_nickname").Update(user)
 	if err != nil {
 		session.Rollback()
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
@@ -166,7 +169,7 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
-	logger.Info("mysql 数据库更新, username: " + username)
+	zaplog.Logger.Info("mysql 数据库更新, username: " + username)
 
 	// 更新缓存
 	conn, err := rediscache.RedisInit()
@@ -183,9 +186,9 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	// 5分钟过期
 	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
 	if err != nil {
-		logger.Error(err.Error())
+		zaplog.Logger.Error(err.Error())
 	}
-	logger.Info("redis 缓存更新, username: " + username)
+	zaplog.Logger.Info("redis 缓存更新, username: " + username)
 
 	// 返回更新信息
 	rep.Retcode = conf.StatusSuccess
@@ -214,9 +217,11 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	}
 	// 用户不存在
 	if !res {
+		err := fmt.Errorf("user:%s not exist", req.Username)
+		zaplog.Logger.Info(err.Error())
 		rep.Retcode = conf.StatusUploadPicFailed
-		rep.Msg = conf.ErrMsg[conf.StatusUploadPicFailed]
-		return nil
+		rep.Msg = conf.ErrMsg[conf.StatusUploadPicFailed] + err.Error()
+		return err
 	}
 	old_url := user.Profile_pic_url
 	user.Profile_pic_url = url
@@ -238,7 +243,7 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return err
 	}
-	logger.Info("mysql 数据库更新, username: " + username)
+	zaplog.Logger.Info("mysql 数据库更新, username: " + username)
 	// 缓存更新
 	conn, err := rediscache.RedisInit()
 	if err != nil {
@@ -254,12 +259,13 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	// 5分钟过期
 	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
 	if err != nil {
-		logger.Error(err.Error())
+		zaplog.Logger.Error(err.Error())
 	}
-	logger.Info("redis 缓存更新, username: " + username)
+	zaplog.Logger.Info("redis 缓存更新, username: " + username)
 	
 	rep.Data = new(pb.UploadPicReturn_Data)
-	rep.Data.ProfilePicUrl = old_url
+	rep.Data.ProfilePicUrl = url
+	rep.Data.OldProfilePicUrl = old_url
 	rep.Retcode = int32(conf.StatusSuccess)
 	rep.Msg = conf.ErrMsg[conf.StatusSuccess]
 	return nil

@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"testing"
 
 	pb "et-protobuf3/src/gomicroapi"
@@ -22,6 +25,7 @@ type AuthResponse struct {
 type DataResponse struct {
 	Token string `json:"token"`
 }
+
 
 func TestParseToken(t *testing.T) {
 	tests := []struct{
@@ -129,4 +133,74 @@ func TestUpdateNickname(t *testing.T) {
 	fmt.Println("response Status:", response.Status)
 	fmt.Println("response Headers:", response.Header)
 	fmt.Println("return body: ", string(body))
+}
+
+func TestUploadPic(t *testing.T) {
+	url := dst + "/upload-pic"
+	params := map[string]string{"username":"Ding"}
+	filenameField := "file"
+	fileName := "test_small.png"
+	filepath := "/Users/yuan.ding/Desktop/code/entry_task/images/" + fileName
+	file, err := os.Open(filepath)
+	if err != nil {
+		t.Error(err)
+	}
+	// 返回 response
+	response, err := UploadPicPOST(url, params, filenameField, fileName, file)
+	if err != nil {
+		t.Error(err)
+	}
+
+	body := body2string(response)
+	updateNicknameResponse := new(pb.UpdateNicknameReturn)
+	err = json.Unmarshal(body, updateNicknameResponse)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	fmt.Println("response Status:", response.Status)
+	fmt.Println("response Headers:", response.Header)
+	fmt.Println("return body: ", string(body))
+
+}
+
+
+// 用户发送POST请求的辅助函数供测试 UploadPic 使用
+func UploadPicPOST(url string, params map[string]string, filenameField string, fileName string, file io.Reader) (*http.Response, error) {
+    body := new(bytes.Buffer)
+    writer := multipart.NewWriter(body)
+	var HttpClient = &http.Client{}
+
+    formFile, err := writer.CreateFormFile(filenameField, fileName)
+    if err != nil {
+        return nil, err
+    }
+
+    _, err = io.Copy(formFile, file)
+    if err != nil {
+        return nil, err
+    }
+
+    for key, val := range params {
+        _ = writer.WriteField(key, val)
+    }
+
+    err = writer.Close()
+    if err != nil {
+        return nil, err
+    }
+
+    req, err := http.NewRequest("POST", url, body)
+	req.Header.Set("Authorization", "Bearer "+ Token)
+    if err != nil {
+        return nil, err
+    }
+    //req.Header.Set("Content-Type","multipart/form-data")
+    req.Header.Add("Content-Type", writer.FormDataContentType())
+
+    resp, err := HttpClient.Do(req)
+    if err != nil {
+        return nil, err
+    }
+    return resp, nil
 }

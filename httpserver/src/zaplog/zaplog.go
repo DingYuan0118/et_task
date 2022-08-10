@@ -18,7 +18,7 @@ func getEncoder() zapcore.Encoder {
 
 // set the log file path
 func getLogWriter() zapcore.WriteSyncer {
-	file, _ := os.Create("../log/log.log")
+	file, _ := os.Create("/Users/yuan.ding/Desktop/code/entry_task/httpserver/log/log.log")
 	return zapcore.AddSync(file)
 }
 
@@ -35,7 +35,7 @@ func InitLogger() *zap.Logger {
 		zapcore.NewCore(encoder, writerSyncer, Atom),
 		zapcore.NewCore(encoder, consoleInfos, Atom),
 	)
-	Logger = zap.New(core, zap.AddCaller())
+	Logger = zap.New(core)
 	Atom.SetLevel(zap.InfoLevel)
 	return Logger
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	
 	s "tcpserver/src/serverfunc"
-	"tcpserver/src/zaplog"
 
 	"github.com/go-micro/plugins/v4/registry/etcd"
 	pb "et-protobuf3/src/gomicroapi"
@@ -22,7 +21,7 @@ func main() {
 		micro.Registry(etcd_reg),
 	)
 	// 
-	zaplog.InitLogger()
+	// zaplog.InitLogger() // 在包有初始化函数场景下，该语句多余
 	// 初始化，解析命令行参数
 	service.Init()
 	// 注册服务
