@@ -1,14 +1,17 @@
 package auth
 
 import (
-	"time"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
-	
-	"github.com/golang-jwt/jwt"
-	"github.com/gin-gonic/gin"
+	"time"
+
 	conf "et-config/src/statusconfig"
+	"httpserver/src/util"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 )
 
 // MyClaims 自定义声明结构体并内嵌jwt.StandardClaims
@@ -16,19 +19,21 @@ import (
 // 我们这里需要额外记录一个username字段，所以要自定义结构体
 // 如果想要保存更多信息，都可以添加到这个结构体中
 type Myclaims struct {
-	Username	string	`json:"username"`
+	Username string `json:"username"`
 	jwt.StandardClaims
 }
 
 // define token expire time
-const TokenExpireDuartion = time.Hour * 100000
+const TokenExpireDuartion = time.Minute * 5
+const TotalUserNum = 10000000 // 总共一千万用户
+const UserStartNum = 10000000 // 起始用户ID
 
 func GenToken(name string) (string, error) {
 	claim := Myclaims{
-		name, 
+		name,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuartion).Unix(),
-			Issuer: "entry task",
+			Issuer:    "entry task",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
@@ -36,8 +41,8 @@ func GenToken(name string) (string, error) {
 	return signed_token, err
 }
 
-func ParseToken(tokenString string) (*Myclaims, error){
-	token, err := jwt.ParseWithClaims(tokenString, &Myclaims{}, func(token *jwt.Token) (i interface{}, err error){
+func ParseToken(tokenString string) (*Myclaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Myclaims{}, func(token *jwt.Token) (i interface{}, err error) {
 		return conf.HmacSampleSecret, nil
 	})
 	if err != nil {
@@ -87,7 +92,13 @@ func JWTAuthMiddleware() func(c *gin.Context) {
 			return
 		}
 		// 将当前请求的username信息保存到请求的上下文c上
-		c.Set("username", mc.Username)
+		if mc.Username == "test" {
+			num_id := util.GenerateRandomIdNum(UserStartNum, UserStartNum + TotalUserNum)
+			username := "stress_test_" + strconv.Itoa(num_id)
+			c.Set("username", username)
+		}else{
+			c.Set("username", mc.Username)
+		}
 		c.Next() // 后续的处理函数可以用过c.Get("username")来获取当前请求的用户信息
 	}
 }

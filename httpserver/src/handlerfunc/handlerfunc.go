@@ -22,7 +22,6 @@ import (
 )
 
 // define token expire time
-const TokenExpireDuartion = time.Hour * 2
 var logger *zap.Logger
 // user etcd register center
 var service micro.Service
@@ -44,12 +43,16 @@ func MicrosServiceInit() {
 
 // use gRPC call the remote Func UserLogin in tcp server
 func validatePassword(userinfo *pb.UserLoginInfo) (int, string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
 	defer cancel()
 	// go micro 调用 UserLogin
 	r, err := entry_task.UserLogin(ctx, &pb.UserLoginInfo{Username: userinfo.Username, Password: userinfo.Password})
 	if err != nil {
 		logger.Error(err.Error())
+		return conf.StatusServerError, err.Error()
+	}
+	if r.Retcode != 0 {
+		logger.Error(r.GetMsg())
 	}
 	return int(r.GetRetcode()), r.GetMsg()
 }
@@ -89,12 +92,24 @@ func UserLoginHandler(c *gin.Context) {
 func UserQueryHandler(c *gin.Context) {
 	// 由 token 提取 username
 	username := c.MustGet("username").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour) // TODO 请求超时时长一般设置 5s
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10) // TODO 请求超时时长一般设置 5s
 	defer cancel()
 
 	r, err := entry_task.UserQuery(ctx, &pb.UserQueryInfo{Username: username})
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error(r.GetMsg())
+		c.JSON(http.StatusOK, gin.H{
+			"code": conf.StatusServerError,
+			"msg": err.Error(),
+			"data": gin.H{
+				"username" : r.GetData().GetUsername(),
+				"nickname" : r.GetData().GetNickname(),
+				"profile_pic" : r.GetData().GetProfilePic(),
+				},
+			})
+	}
+	if r.GetRetcode() != 0 {
+		logger.Error(r.GetMsg())
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": r.GetRetcode(),
@@ -123,12 +138,12 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 		})
 		return 
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
 	defer cancel()
 
-	r, err := entry_task.UpdateNickname(ctx, &user)
-	if err != nil {
-		logger.Error(err.Error())
+	r, _ := entry_task.UpdateNickname(ctx, &user)
+	if r.GetRetcode() != 0 {
+		logger.Error(r.GetMsg())
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": r.GetRetcode(),
@@ -166,19 +181,19 @@ func UserUploadPicHandler(c *gin.Context) {
 	// 判断是否符合格式
 	var types = []string {"image/png", "image/jpeg", "image/bmp"}
 	if !util.Contains(types, filetype) {
-		logger.Info("file format error, support [png, jpeg, bmp], got " + filetype)
+		logger.Error("file format error, support [png, jpeg, bmp], got " + filetype)
 		c.JSON(http.StatusOK, gin.H{
-			"code": conf.StatusUploadPicFailed,
-			"msg": "file format error, support [png, jpeg, bmp], got " + filetype ,
+			"code": conf.StatusUploadPicFormatWrong,
+			"msg": conf.ErrMsg[conf.StatusUploadPicFormatWrong],
 		})
 		return 
 	}
 	// filesize should < 3MB
 	if file.Size > 3 << 20 {
-		logger.Info("file too large, should less than 3MB" + filetype)
+		logger.Error("file too large, should less than 3MB")
 		c.JSON(http.StatusOK, gin.H{
-			"code": conf.StatusUploadPicFailed,
-			"msg": "file too large, should less than 3MB",
+			"code": conf.StatusUploadPicTooLarge,
+			"msg": conf.ErrMsg[conf.StatusUploadPicTooLarge],
 		})
 		return 
 	}
@@ -190,19 +205,21 @@ func UserUploadPicHandler(c *gin.Context) {
 	user.Data = new(pb.UploadPicInfo_Data)
 	user.Data.ProfilePicUrl = url
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
 	defer cancel()
 
 	// 返回旧 url 用于删除
-	r, err := entry_task.UploadPic(ctx, &user)
-	if err != nil {
-		logger.Error(err.Error())
+	r, _ := entry_task.UploadPic(ctx, &user)
+	
+	if r.GetRetcode() != 0 {
+		logger.Error(r.GetMsg())
 		c.JSON(http.StatusOK, gin.H{
-			"code": conf.StatusUploadPicFailed,
-			"msg": err.Error(),
+			"code": r.GetRetcode(),
+			"msg": r.GetMsg(),
 		})
 		return
 	}
+
 
 	old_url := r.Data.OldProfilePicUrl
 	// 删除后更新

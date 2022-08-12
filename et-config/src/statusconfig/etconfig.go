@@ -17,29 +17,37 @@ const (
 
 // 状态码设置
 const (
-	StatusSuccess             = 0    // |0|成功|
-	StatusServerError         = 1000 // |1000|服务器错误|
-	StatusInvalidParams       = 1001 // |1001|非法参数|
-	StatusNotFound            = 1002 // |1002|Not found|
-	StatusLoginFailed         = 2001 // |2001|登录失败|
-	StatusTokenInvalid        = 2002 // |2002|Token 失效，重新登录|
-	StatusNoToken             = 2003 // |2003|请求头中无token，重新登录|
-	StatusQueryFaild          = 3001 // |3001|查询失败|
-	StatusUpdateNicknameFaild = 3002 // |3002|更新昵称失败|
-	StatusUploadPicFailed     = 3003 // |3003|上传头像失败|
+	StatusSuccess                   = 0    // |0|成功|
+	StatusServerError               = 1000 // |1000|服务器错误|
+	StatusInvalidParams             = 1001 // |1001|非法参数|
+	StatusNotFound                  = 1002 // |1002|Not found|
+	StatusLoginFailedPasswordWrong  = 2001 // |2001|登录失败，密码错误|
+	StatusLoginFailedNoUser         = 2002 // |2002|登录失败，用户不存在|
+	StatusTokenInvalid              = 2003 // |2003|Token 失效，重新登录|
+	StatusNoToken                   = 2004 // |2004|请求头中无token，重新登录|
+	StatusQueryFaild                = 3001 // |3001|查询失败|
+	StatusNicknameTooLong           = 4001 // |4001|更新昵称失败,昵称过长|
+	StatusUpdateNicknameFaildNoUser = 4002 // |4002|更新昵称失败,用户不存在|
+	StatusUploadPicFormatWrong      = 5001 // |5001|上传头像失败,格式错误|
+	StatusUploadPicTooLarge         = 5002 // |5002|上传头像失败,文件过大|
+	StatusUploadPicFailedNouser     = 5003 // |5003|上传头像失败,用户不存在|
 )
 
 var ErrMsg = map[int]string{
-	StatusSuccess:             "Success. ",                         // |0|成功|
-	StatusServerError:         "Server Error. ",                    // |1000|服务器错误|
-	StatusInvalidParams:       "Invalid Params. ",                  // |1001|非法参数|
-	StatusNotFound:            "Not Found. ",                       // |1002|Not found|
-	StatusLoginFailed:         "Login Failed. ",                    // |2001|登录失败|
-	StatusTokenInvalid:        "Token Invalid. Please Login again", // |2002|Token 失效，重新登录|
-	StatusNoToken:             "Token not exist. ",                 // |2003|请求头中无token，重新登录|
-	StatusQueryFaild:          "Query Faild. ",                     // |3001|查询失败|
-	StatusUpdateNicknameFaild: "Update Nickname Faild. ",           // |3002|更新昵称失败|
-	StatusUploadPicFailed:     "Upload Picture Failed. ",           // |3003|上传头像失败|
+	StatusSuccess:                   "Success. ",
+	StatusServerError:               "Server Error. ",
+	StatusInvalidParams:             "Invalid Params. ",
+	StatusNotFound:                  "Not Found. ",
+	StatusLoginFailedPasswordWrong:  "Login Failed. Wrong Password",
+	StatusLoginFailedNoUser:         "Login Failed. User not exist",
+	StatusTokenInvalid:              "Token Invalid. Please Login again",
+	StatusNoToken:                   "Token not exist. ",
+	StatusQueryFaild:                "Query Faild. User not exist",
+	StatusNicknameTooLong:           "Update Nickname Faild. Nickname Too Long, should less than 64",
+	StatusUpdateNicknameFaildNoUser: "Update Nickname Faild. User not exist",
+	StatusUploadPicFormatWrong:      "Upload Picture Failed. file format error, support [png, jpeg, bmp]",
+	StatusUploadPicTooLarge:         "Upload Picture Failed. file too large, should less than 3MB",
+	StatusUploadPicFailedNouser:     "Upload Picture Failed. User not exist",
 }
 
 // 图像存储路径

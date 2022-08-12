@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenToken(t *testing.T) {
-	token, err := GenToken("dingyuan")
+	token, err := GenToken("test")
 	if err != nil {
 		t.Error(err)
 	}

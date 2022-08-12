@@ -1,6 +1,7 @@
 package util
 
 import (
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 )
@@ -27,4 +28,10 @@ func Contains(slices []string, value string) bool {
         }
     }
     return false
+}
+
+// 生成 [start, end] 中的随机数
+func GenerateRandomIdNum(start int, end int) int {
+    num := rand.Intn((end - start)) + start
+    return num
 }

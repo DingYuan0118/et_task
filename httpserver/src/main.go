@@ -10,19 +10,19 @@ import (
 	"httpserver/src/zaplog"
 	hand "httpserver/src/handlerfunc"
 
-	ginzap "github.com/gin-contrib/zap"
+	// ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// 日志初始化在前
-	logger := zaplog.InitLogger()
+	zaplog.InitLogger()
 	hand.MicrosServiceInit()
 	flag.Parse()
-	r := gin.New()
-	// r := gin.Default()
+	// r := gin.New()
+	r := gin.Default()
 	// 使用 zap 记录 gin 以及其他信息，默认级别为 INFO，分别输出至 ./log 与 os.stdout
-	r.Use(ginzap.Ginzap(logger, "", true), ginzap.RecoveryWithZap(logger, true))
+	// r.Use(ginzap.Ginzap(logger, "", true), ginzap.RecoveryWithZap(logger, true))
 	r.POST("/login", hand.UserLoginHandler)
 	r.GET("/query", auth.JWTAuthMiddleware(), hand.UserQueryHandler)
 	r.POST("/update-nickname", auth.JWTAuthMiddleware(), hand.UserUpdateNicknameHandler)

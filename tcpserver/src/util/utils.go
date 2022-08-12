@@ -8,11 +8,11 @@ import (
 )
 
 // 第三方包错误统一返回
-func ThirdPackageError(err error) (retcode int32, msg string) {
+func ThirdPackageError(err error) (int32, string) {
 	zaplog.Logger.Error(err.Error())
-	retcode = int32(conf.StatusServerError)
-	msg = err.Error()
-	return
+	retcode := int32(conf.StatusServerError)
+	msg := err.Error()
+	return retcode, msg
 }
 
 // 数据库密码加密
