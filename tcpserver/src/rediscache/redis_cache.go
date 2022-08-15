@@ -14,6 +14,7 @@ func RedisPoolInit() *redis.Pool {
 		MaxIdle: Maxidle,
 		MaxActive: Maxactive, 
 		IdleTimeout: Idletimeout,
+		Wait: true,
 		Dial: func() (redis.Conn, error){
 			conn, err := redis.Dial("tcp", 
 				"0.0.0.0:6379",

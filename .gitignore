@@ -25,3 +25,5 @@ go.work
 *.dtmp
 *.DS_Store
 tmp*
+
+userimages/*

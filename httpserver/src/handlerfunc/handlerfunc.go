@@ -92,21 +92,17 @@ func UserLoginHandler(c *gin.Context) {
 func UserQueryHandler(c *gin.Context) {
 	// 由 token 提取 username
 	username := c.MustGet("username").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10) // TODO 请求超时时长一般设置 5s
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10) // 请求超时时长一般设置 10s
 	defer cancel()
 
 	r, err := entry_task.UserQuery(ctx, &pb.UserQueryInfo{Username: username})
 	if err != nil {
-		logger.Error(r.GetMsg())
+		logger.Error(err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"code": conf.StatusServerError,
 			"msg": err.Error(),
-			"data": gin.H{
-				"username" : r.GetData().GetUsername(),
-				"nickname" : r.GetData().GetNickname(),
-				"profile_pic" : r.GetData().GetProfilePic(),
-				},
 			})
+		return
 	}
 	if r.GetRetcode() != 0 {
 		logger.Error(r.GetMsg())
@@ -141,7 +137,15 @@ func UserUpdateNicknameHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 10)
 	defer cancel()
 
-	r, _ := entry_task.UpdateNickname(ctx, &user)
+	r, err := entry_task.UpdateNickname(ctx, &user)
+	if err != nil {
+		logger.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code": conf.StatusServerError,
+			"msg": err.Error(),
+			})
+		return
+	}
 	if r.GetRetcode() != 0 {
 		logger.Error(r.GetMsg())
 	}
@@ -209,7 +213,15 @@ func UserUploadPicHandler(c *gin.Context) {
 	defer cancel()
 
 	// 返回旧 url 用于删除
-	r, _ := entry_task.UploadPic(ctx, &user)
+	r, err := entry_task.UploadPic(ctx, &user)
+	if err != nil {
+		logger.Error(err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"code": conf.StatusServerError,
+			"msg": err.Error(),
+			})
+		return
+	}
 	
 	if r.GetRetcode() != 0 {
 		logger.Error(r.GetMsg())

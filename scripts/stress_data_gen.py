@@ -17,7 +17,7 @@ cursor = conn.cursor()
 # $2a$04$EMdYwzi3AQH9LpVbI8wg2O9IUfSute3aJVEygGRkyWEN/FXuscz/u is bcrypt encode for "dingyuan"
 sql = """INSERT INTO user (usr_name, usr_nickname, usr_password, profile_pic_url, ctime, mtime) 
 VALUES
-("stress_test_{}","stress_test_nickname_{}","$2a$04$EMdYwzi3AQH9LpVbI8wg2O9IUfSute3aJVEygGRkyWEN/FXuscz/u", "https://c-ssl.duitang.com/uploads/item/202001/27/20200127191847_vfsJ3.jpeg", "{}", "{}");
+("stress_test_{}","stress_test_nickname_{}","ddf95206809a0520986c09d836b52bdc", "https://c-ssl.duitang.com/uploads/item/202001/27/20200127191847_vfsJ3.jpeg", "{}", "{}");
 """
 
 print(sql)

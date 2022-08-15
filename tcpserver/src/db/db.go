@@ -26,9 +26,11 @@ type DBclient struct {
 
 var Client *DBclient
 
-func NewDBclient(dst string, dbMaxOpenConns int) (error) {
+func NewDBclient(dst string, DBMaxOpenConns, DBMaxIdleConns int, DBConnMaxLifetime time.Duration) (error) {
 	engine, err := xorm.NewEngine("mysql", dst)
-	engine.SetMaxOpenConns(dbMaxOpenConns)
+	engine.SetMaxIdleConns(DBMaxIdleConns)
+	engine.SetMaxOpenConns(DBMaxOpenConns)
+	engine.SetConnMaxLifetime(DBConnMaxLifetime)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func NewDBclient(dst string, dbMaxOpenConns int) (error) {
 
 func init(){
 	db_dst := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/%s?charset=utf8", Password, DBname)
-	err := NewDBclient(db_dst, DBMaxOpenConns)
+	err := NewDBclient(db_dst, DBMaxOpenConns, DBMaxIdleConns, DBConnMaxLifetime)
 	if err != nil {
 		log.Println(err)
 	}

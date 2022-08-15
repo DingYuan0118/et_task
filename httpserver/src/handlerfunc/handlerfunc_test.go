@@ -54,7 +54,7 @@ var jsonData = []byte(`{
 }`)
 
 const Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJleHAiOjIwMjAwMzAyODMsImlzcyI6ImVudHJ5IHRhc2sifQ.RVV8jwO5PDC-CW8cu25ulnLGOFitE8Ibxe02k-tLqH0"
-const Testtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJleHAiOjE2NjAyNzI2MTgsImlzcyI6ImVudHJ5IHRhc2sifQ.k8nmOs8n8zDjrR5UYMuq8y6uqUEXEQquxfNOVNH6M1o"
+const Testtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJleHAiOjE2OTY1MzM0NDMsImlzcyI6ImVudHJ5IHRhc2sifQ.CmJQKxeM2DXUMLvLXEWBHimZfxMb7kZL8Vd3Xkv4hNA"
 
 func body2string(response *http.Response) []byte {
 	body, _ := ioutil.ReadAll(response.Body)

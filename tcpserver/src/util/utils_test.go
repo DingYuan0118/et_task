@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"log"
 	"testing"
 )
@@ -29,4 +30,10 @@ func TestComparePasswords(t *testing.T) {
 			t.Errorf("%s and %s result is %v, want %v", test.password, test.hashedpwd, got, test.want)
 		}
 	}
+}
+
+func TestMD5Encode(t *testing.T) {
+	password := "dingyuan"
+	md5password := MD5Encode(password)
+	fmt.Println(md5password)
 }
