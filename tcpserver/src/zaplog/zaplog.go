@@ -36,7 +36,7 @@ func InitLogger() *zap.Logger {
 		zapcore.NewCore(encoder, consoleInfos, Atom),
 	)
 	Logger = zap.New(core, zap.AddCaller())
-	Atom.SetLevel(zap.ErrorLevel)
+	Atom.SetLevel(loglever)
 	return Logger
 }
 

@@ -93,10 +93,10 @@ func JWTAuthMiddleware() func(c *gin.Context) {
 		}
 		// 将当前请求的username信息保存到请求的上下文c上
 		if mc.Username == "test" {
-			num_id := util.GenerateRandomIdNum(UserStartNum, UserStartNum + TotalUserNum)
+			num_id := util.GenerateRandomIdNum(UserStartNum, UserStartNum+TotalUserNum)
 			username := "stress_test_" + strconv.Itoa(num_id)
 			c.Set("username", username)
-		}else{
+		} else {
 			c.Set("username", mc.Username)
 		}
 		c.Next() // 后续的处理函数可以用过c.Get("username")来获取当前请求的用户信息

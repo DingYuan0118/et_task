@@ -329,6 +329,7 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 
 	res_json, err := redis.Bytes(conn.Do("GET", username))
 	if err != nil {
+		zaplog.Logger.Error(err.Error())
 		res, err := engine.Where("usr_name = ?", username).Get(user)
 		if err != nil {
 			zaplog.Logger.Error(err.Error())

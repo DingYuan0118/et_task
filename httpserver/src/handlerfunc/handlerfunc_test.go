@@ -32,8 +32,8 @@ func TestParseToken(t *testing.T) {
 		token string
 		want bool
 	}{
-		{token: Token, want: true},
-		{token: Token + "1", want: false},
+		{token: ForeverTrueToken, want: true},
+		{token: ForeverTrueToken + "1", want: false},
 	}
 	
 	for _, test := range tests {
@@ -53,8 +53,9 @@ var jsonData = []byte(`{
 	"password": "dingyuan"
 }`)
 
-const Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJleHAiOjIwMjAwMzAyODMsImlzcyI6ImVudHJ5IHRhc2sifQ.RVV8jwO5PDC-CW8cu25ulnLGOFitE8Ibxe02k-tLqH0"
-const Testtoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJleHAiOjE2OTY1MzM0NDMsImlzcyI6ImVudHJ5IHRhc2sifQ.CmJQKxeM2DXUMLvLXEWBHimZfxMb7kZL8Vd3Xkv4hNA"
+const ForeverTrueToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJpc3MiOiJlbnRyeSB0YXNrIn0.lF8XojmzaOUgoBJAniVC9vqPNmS7cXij7vaJgZ13NdY"
+const ForeverTesttoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJleHAiOjE2OTY1MzM0NDMsImlzcyI6ImVudHJ5IHRhc2sifQ.CmJQKxeM2DXUMLvLXEWBHimZfxMb7kZL8Vd3Xkv4hNA"
+const ForeverFalseToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmcxMjMiLCJleHAiOjE2NjA2MTg4MzUsImlzcyI6ImVudHJ5IHRhc2sifQ.HTUKwXVZDrpXSrhrEk1ssf7wsZ703gnfsoP1x-yt_Y4"
 
 func body2string(response *http.Response) []byte {
 	body, _ := ioutil.ReadAll(response.Body)
@@ -89,7 +90,7 @@ func TestUserQuery(t *testing.T) {
 	q := request.URL.Query()
 	q.Add("username", "Ding")
 	request.URL.RawQuery = q.Encode()
-	request.Header.Set("Authorization", "Bearer "+Token)
+	request.Header.Set("Authorization", "Bearer "+ForeverTrueToken)
 
 	// use Token get query result
 	client := &http.Client{}
@@ -117,7 +118,7 @@ func TestUpdateNickname(t *testing.T) {
 		t.Error(err.Error())
 	}
 	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	request.Header.Set("Authorization", "Bearer "+ Token)
+	request.Header.Set("Authorization", "Bearer "+ ForeverTrueToken)
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
@@ -192,7 +193,7 @@ func UploadPicPOST(url string, params map[string]string, filenameField string, f
     }
 
     req, err := http.NewRequest("POST", url, body)
-	req.Header.Set("Authorization", "Bearer "+ Token)
+	req.Header.Set("Authorization", "Bearer "+ ForeverTrueToken)
     if err != nil {
         return nil, err
     }
