@@ -10,16 +10,6 @@ import (
 	// "tcpserver/src/serverfunc"
 )
 
-type User struct {
-	Id					int64
-	Name 				string		`xorm:"varchar(64) not null unique 'usr_name'"`
-	Nickname 			string 		`xorm:"varchar(64) 'usr_nickname'"`
-	Password			string		`xorm:"varchar(64) 'usr_password'"`
-	Profile_pic_url 	string		`xorm:"varchar(1024) "`
-	Ctime				time.Time	`xorm:"created"`
-	Mtime				time.Time	`xorm:"updated"`
-}
-
 type DBclient struct {
 	Engine *xorm.Engine
 }
