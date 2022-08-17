@@ -55,7 +55,7 @@ var jsonData = []byte(`{
 
 const ForeverTrueToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmciLCJpc3MiOiJlbnRyeSB0YXNrIn0.lF8XojmzaOUgoBJAniVC9vqPNmS7cXij7vaJgZ13NdY"
 const ForeverTesttoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJleHAiOjE2OTY1MzM0NDMsImlzcyI6ImVudHJ5IHRhc2sifQ.CmJQKxeM2DXUMLvLXEWBHimZfxMb7kZL8Vd3Xkv4hNA"
-const ForeverFalseToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmcxMjMiLCJleHAiOjE2NjA2MTg4MzUsImlzcyI6ImVudHJ5IHRhc2sifQ.HTUKwXVZDrpXSrhrEk1ssf7wsZ703gnfsoP1x-yt_Y4"
+const ForeverFalseToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRpbmcxMjMiLCJpc3MiOiJlbnRyeSB0YXNrIn0.WEFT9n80hlF6w4qOt7AS9alsRcvp9hie-EESzptdP70"
 
 func body2string(response *http.Response) []byte {
 	body, _ := ioutil.ReadAll(response.Body)

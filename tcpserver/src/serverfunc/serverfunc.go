@@ -197,7 +197,7 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 		return nil
 	}
 	
-	// 先查缓存, 查缓存
+	// 先查缓存
 	conn, err := rediscache.RedisInit()
 	if err != nil {
 		zaplog.Logger.Error(err.Error())
@@ -205,7 +205,6 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 		msg := err.Error()
 		rep.Retcode = retcode
 		rep.Msg = msg
-		// rep.Retcode, rep.Msg = util.ThirdPackageError(err)
 		return nil
 	}
 	defer conn.Close()
@@ -273,19 +272,12 @@ func (s *Server) UpdateNickname(ctx context.Context, req *pb.UpdateNicknameInfo,
 	}
 	zaplog.Logger.Info("mysql 数据库更新, username: " + username)
 
-	// 更新缓存
-	user_data_json_encode, err := json.Marshal(*user)
-	if err != nil {
-		zaplog.Logger.Error(err.Error())
-		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
-		return nil
-	}
-	// 5分钟过期
-	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
+	// 缓存删除，防止不一致。 不能先更新数据再更新缓存，存在数据一致性问题。
+	_, err = conn.Do("DEL", user.Name)
 	if err != nil {
 		zaplog.Logger.Error(err.Error())
 	}else{
-		zaplog.Logger.Info("redis 缓存更新, username: " + username)
+		zaplog.Logger.Info("redis 删除, username: " + username)
 	}
 
 	// 返回更新信息
@@ -300,7 +292,6 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	// tmp := pb.UpdatePicReturn{}
 	username := req.GetUsername()
 	url := req.GetData().GetProfilePicUrl()
-	// 更新数据库
 	// 先查缓存, 查缓存
 	conn, err := rediscache.RedisInit()
 	if err != nil {
@@ -313,7 +304,7 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 		return nil
 	}
 	defer conn.Close()
-
+	
 	// 数据库连接
 	engine, err := db.DBConnect()
 	if err != nil {
@@ -352,6 +343,7 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	
 	old_url := user.Profile_pic_url
 	user.Profile_pic_url = url
+	// 更新数据库
 	session := engine.NewSession()
 	defer session.Close()
 	err = session.Begin()
@@ -375,19 +367,12 @@ func (s *Server) UploadPic(ctx context.Context, req *pb.UploadPicInfo, rep *pb.U
 	}
 	zaplog.Logger.Info("mysql 数据库更新, username: " + username)
 
-	// 缓存更新
-	user_data_json_encode, err := json.Marshal(*user)
-	if err != nil {
-		zaplog.Logger.Error(err.Error())
-		rep.Retcode, rep.Msg = util.ThirdPackageError(err)
-		return nil
-	}
-	// 5分钟过期
-	_, err = conn.Do("set", user.Name, user_data_json_encode, "EX", "300")
+	// 缓存删除，防止不一致。 不能先更新数据再更新缓存，存在数据一致性问题。
+	_, err = conn.Do("DEL", user.Name)
 	if err != nil {
 		zaplog.Logger.Error(err.Error())
 	}else{
-		zaplog.Logger.Info("redis 缓存更新, username: " + username)
+		zaplog.Logger.Info("redis 缓存删除, username: " + username)
 	}
 
 	rep.Data = new(pb.UploadPicReturn_Data)
