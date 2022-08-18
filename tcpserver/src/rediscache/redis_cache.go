@@ -9,6 +9,7 @@ import (
 var Rds redis.Conn
 var Pool *redis.Pool
 
+// RedisPoolInit initialize a redis connectino pool configed by redis_config.go
 func RedisPoolInit() *redis.Pool {
 	return &redis.Pool{
 		MaxIdle: Maxidle,
@@ -32,10 +33,12 @@ func RedisPoolInit() *redis.Pool {
 	}
 }
 
+// init() initialize the connection poll when package is imported
 func init() {
 	Pool = RedisPoolInit()
 }
 
+// RedisInit() return the connection from the connectin pool
 func RedisInit() (redis.Conn, error) {
 	conn := Pool.Get()
 	return conn, nil

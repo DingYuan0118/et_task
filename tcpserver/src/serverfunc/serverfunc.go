@@ -27,9 +27,6 @@ var msg string
 
 // tcp 服务端检查密码，demo
 func (s *Server) UserLogin(ctx context.Context, req *pb.UserLoginInfo, rep *pb.LoginReturn) error {
-	rep.Retcode = conf.StatusSuccess
-	rep.Msg = conf.ErrMsg[conf.StatusSuccess]
-
 	// redis 缓存
 	username := req.Username
 	conn, err := rediscache.RedisInit()
@@ -159,7 +156,7 @@ func (s *Server) UserQuery(ctx context.Context, req *pb.UserQueryInfo, rep *pb.Q
 			return nil
 		}
 		// redis 缓存更新
-		user_data_json_encode, err := json.Marshal(*user)
+		user_data_json_encode, err := json.Marshal(*user) // 影响性能
 		if err != nil {
 			zaplog.Logger.Error(err.Error())
 		} else {

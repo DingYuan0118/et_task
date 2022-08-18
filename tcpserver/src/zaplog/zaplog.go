@@ -6,8 +6,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-// set the log format
+ 
 func getEncoder() zapcore.Encoder {
 	// return zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	encoderConfig := zap.NewProductionEncoderConfig()
@@ -16,7 +15,7 @@ func getEncoder() zapcore.Encoder {
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-// set the log file path
+// getLogWriter set the log file 
 func getLogWriter() zapcore.WriteSyncer {
 	file, _ := os.Create("/Users/yuan.ding/Desktop/code/entry_task/tcpserver/log/log.log")
 	return zapcore.AddSync(file)
@@ -25,6 +24,7 @@ func getLogWriter() zapcore.WriteSyncer {
 var Logger *zap.Logger
 var Atom zap.AtomicLevel
 
+// InitLogger initialize a package lever *zap.Logger can be used by import package
 func InitLogger() *zap.Logger {
 	Atom = zap.NewAtomicLevel()
 	encoder := getEncoder()

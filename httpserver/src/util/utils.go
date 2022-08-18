@@ -6,7 +6,8 @@ import (
 	"net/http"
 )
 
-// 使用文件前 512 字节判断文件类型
+// GetFileContentType use the first 512 bytes data to judge the concrete 
+// type of multipart.File use http.DetectContentType
 func GetFileContentType(out multipart.File) (string, error) {
 
     // 只需要前 512 个字节就可以了

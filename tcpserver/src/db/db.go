@@ -16,6 +16,7 @@ type DBclient struct {
 
 var Client *DBclient
 
+// NewDBclient set the connection pool config
 func NewDBclient(dst string, DBMaxOpenConns, DBMaxIdleConns int, DBConnMaxLifetime time.Duration) (error) {
 	engine, err := xorm.NewEngine("mysql", dst)
 	engine.SetMaxIdleConns(DBMaxIdleConns)
@@ -28,6 +29,7 @@ func NewDBclient(dst string, DBMaxOpenConns, DBMaxIdleConns int, DBConnMaxLifeti
 	return nil
 }
 
+// init the mysql connection pool
 func init(){
 	db_dst := fmt.Sprintf("root:%s@tcp(127.0.0.1:3306)/%s?charset=utf8", Password, DBname)
 	err := NewDBclient(db_dst, DBMaxOpenConns, DBMaxIdleConns, DBConnMaxLifetime)
@@ -36,6 +38,7 @@ func init(){
 	}
 }
 
+// DBconnect return a mysql connection from connection pool use by xorm 
 func DBConnect() (*xorm.Engine, error)  {
 	err := Client.Engine.Sync(new(User))
 	if err != nil {

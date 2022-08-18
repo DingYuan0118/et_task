@@ -14,10 +14,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-// MyClaims 自定义声明结构体并内嵌jwt.StandardClaims
-// jwt包自带的jwt.StandardClaims只包含了官方字段
-// 我们这里需要额外记录一个username字段，所以要自定义结构体
-// 如果想要保存更多信息，都可以添加到这个结构体中
+// Myclaims define custom messages need to be saved in token string 
 type Myclaims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
@@ -28,6 +25,7 @@ const TokenExpireDuartion = time.Minute * 5
 const TotalUserNum = 10000000 // 总共一千万用户
 const UserStartNum = 10000000 // 起始用户ID
 
+// GenToken generate the token string according to the name
 func GenToken(name string) (string, error) {
 	claim := Myclaims{
 		name,
@@ -41,6 +39,7 @@ func GenToken(name string) (string, error) {
 	return signed_token, err
 }
 
+// ParseToken will validate the token, if valid return the *Myclaims struct which contained the saved message
 func ParseToken(tokenString string) (*Myclaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Myclaims{}, func(token *jwt.Token) (i interface{}, err error) {
 		return conf.HmacSampleSecret, nil
@@ -54,13 +53,11 @@ func ParseToken(tokenString string) (*Myclaims, error) {
 	return nil, errors.New("invalid token")
 }
 
-// JWT 认证中间件
-// JWTAuthMiddleware 基于JWT的认证中间件
+
+// JWTAuthMiddleware is a token middleware used to verify token
 func JWTAuthMiddleware() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		// 客户端携带Token有三种方式 1.放在请求头 2.放在请求体 3.放在URI
-		// 这里假设Token放在Header的Authorization中，并使用Bearer开头
-		// 这里的具体实现方式要依据你的实际业务情况决定
+		// Token 方式为 Bear Token, 置于请求头中
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusOK, gin.H{
