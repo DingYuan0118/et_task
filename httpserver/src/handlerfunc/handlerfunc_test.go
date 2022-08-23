@@ -26,16 +26,15 @@ type DataResponse struct {
 	Token string `json:"token"`
 }
 
-
 func TestParseToken(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		token string
-		want bool
+		want  bool
 	}{
 		{token: ForeverTrueToken, want: true},
 		{token: ForeverTrueToken + "1", want: false},
 	}
-	
+
 	for _, test := range tests {
 		got, err := auth.ParseToken(test.token)
 		res := (err == nil)
@@ -118,7 +117,7 @@ func TestUpdateNickname(t *testing.T) {
 		t.Error(err.Error())
 	}
 	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	request.Header.Set("Authorization", "Bearer "+ ForeverTrueToken)
+	request.Header.Set("Authorization", "Bearer "+ForeverTrueToken)
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
@@ -139,7 +138,7 @@ func TestUpdateNickname(t *testing.T) {
 
 func TestUploadPic(t *testing.T) {
 	url := dst + "/upload-pic"
-	params := map[string]string{"username":"Ding"}
+	params := map[string]string{"username": "Ding"}
 	filenameField := "file"
 	fileName := "test_small.png"
 	filepath := "/Users/yuan.ding/Desktop/code/entry_task/images/" + fileName
@@ -166,43 +165,42 @@ func TestUploadPic(t *testing.T) {
 
 }
 
-
 // 用户发送POST请求的辅助函数供测试 UploadPic 使用
 func UploadPicPOST(url string, params map[string]string, filenameField string, fileName string, file io.Reader) (*http.Response, error) {
-    body := new(bytes.Buffer)
-    writer := multipart.NewWriter(body)
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
 	var HttpClient = &http.Client{}
 
-    formFile, err := writer.CreateFormFile(filenameField, fileName)
-    if err != nil {
-        return nil, err
-    }
+	formFile, err := writer.CreateFormFile(filenameField, fileName)
+	if err != nil {
+		return nil, err
+	}
 
-    _, err = io.Copy(formFile, file)
-    if err != nil {
-        return nil, err
-    }
+	_, err = io.Copy(formFile, file)
+	if err != nil {
+		return nil, err
+	}
 
-    for key, val := range params {
-        _ = writer.WriteField(key, val)
-    }
+	for key, val := range params {
+		_ = writer.WriteField(key, val)
+	}
 
-    err = writer.Close()
-    if err != nil {
-        return nil, err
-    }
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
 
-    req, err := http.NewRequest("POST", url, body)
-	req.Header.Set("Authorization", "Bearer "+ ForeverTrueToken)
-    if err != nil {
-        return nil, err
-    }
-    //req.Header.Set("Content-Type","multipart/form-data")
-    req.Header.Add("Content-Type", writer.FormDataContentType())
+	req, err := http.NewRequest("POST", url, body)
+	req.Header.Set("Authorization", "Bearer "+ForeverTrueToken)
+	if err != nil {
+		return nil, err
+	}
+	//req.Header.Set("Content-Type","multipart/form-data")
+	req.Header.Add("Content-Type", writer.FormDataContentType())
 
-    resp, err := HttpClient.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    return resp, nil
+	resp, err := HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
